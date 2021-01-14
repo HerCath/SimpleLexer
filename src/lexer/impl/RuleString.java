@@ -8,6 +8,7 @@ public class RuleString extends Capturable implements StateLessRule {
 
     public RuleString(boolean capture, CharSequence cSeq) {
         super(capture);
+        if (cSeq.length()==0) throw new RuntimeException("A rule that match the empty string is not a legit one.");
         this.cSeq = cSeq;
     }
 
@@ -27,5 +28,7 @@ public class RuleString extends Capturable implements StateLessRule {
         ctx.pos = pos;
         return null;
     }
+    
+    @Override public int minSize() { return cSeq.length(); }
     
 }

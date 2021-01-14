@@ -47,24 +47,38 @@ public class RuleAnd implements Rule {
             Rule subRule = subRules.get(i);
             MatchedContent subMatch = subRule.tryToMatch(ctx, subStates.get(i));
             if (subMatch==null) {
+            	System.out.println("subRule #"+i+" "+subRule+" did not match");
                 ctx.pos = pos;
                 return null;
             }
+            System.out.println("subRule #"+i+" "+subRule+" match "+subMatch.captured);
             if (subMatch.captured!=null) {
                 if (subMatch.captured.name.equals("*")) {
                     Branch b = (Branch) subMatch.captured;
-                    for (int bi=0, bl=b.childs.size(); bi<bl; bi++) {
-                        subMatches.add(b.childs.get(bi));
-                    }
+                    subMatches.addAll(b.childs);
                 } else {
                     subMatches.add(subMatch.captured);
                 }
             }
         }
-        if (subMatches.size()>0) {
-            return new MatchedContent(new Branch("*", subMatches));
-        }
-        return new MatchedContent(new Branch("*"));
+        return new MatchedContent(new Branch("*", subMatches));
     }
     
+    @Override
+    public int minSize() {
+    	int sum = 0;
+    	for (int i=0, l=subRules.size(); i<l;sum+=subRules.get(i++).minSize());
+    	return sum;
+    }
+    
+
+    @Override
+    public String toString() {
+    	StringBuilder sb = new StringBuilder();
+    	for (Rule subRule:subRules) {
+    		if (sb.length()>0) sb.append(" ");
+    		sb.append(subRule);
+    	}
+    	return sb.toString();
+    }
 }

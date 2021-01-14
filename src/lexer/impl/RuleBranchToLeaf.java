@@ -4,9 +4,9 @@ import lexer.Leaf;
 
 public class RuleBranchToLeaf implements Rule {
 
-    final Rule wrapped;
+    private final Rule wrapped;
 
-    RuleBranchToLeaf(Rule wrapped) { this.wrapped = wrapped; }
+    public RuleBranchToLeaf(Rule wrapped) { this.wrapped = wrapped; }
 
     @Override
     public Object createInitialState(Context ctx) {
@@ -26,5 +26,8 @@ public class RuleBranchToLeaf implements Rule {
         }
         return mc;
     }
+    
+    @Override
+    public int minSize() { return wrapped.minSize(); }
     
 }

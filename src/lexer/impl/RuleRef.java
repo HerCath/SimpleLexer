@@ -26,4 +26,7 @@ public class RuleRef extends Capturable implements Rule {
         return mc;
     }
     
+    @Override
+    public int minSize() { return rules.get(name).minSize(); }
+    
 }

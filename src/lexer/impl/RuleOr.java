@@ -48,4 +48,14 @@ public class RuleOr implements Rule {
         return subRules.get(_state.ruleIdx).tryToMatch(ctx, _state.ruleState);
     }
     
+    @Override
+    public int minSize() {
+    	int min = Integer.MAX_VALUE;
+    	for (int i=0, l=subRules.size(); i<l;i++) {
+    		int ms = subRules.get(i).minSize();
+    		if (min>ms) min=ms;
+    	}
+    	return min;
+    }
+    
 }
