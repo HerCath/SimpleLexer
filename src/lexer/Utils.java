@@ -35,7 +35,7 @@ public class Utils {
     	CharClass _underscore = CharClass.fromChar('_');
     	CharClass _semiColomn = CharClass.fromChar(';');
     	
-    	Rule skipSpaces = new RuleCardinality(0, Integer.MAX_VALUE, false, new RuleChar(false, _ws)) { public String toString() { return "WS*"; } } ;
+    	Rule skipSpaces = new RuleCardinality(0, Integer.MAX_VALUE, false, new RuleChar(false, _ws){public String toString(){return "WS";}} );
     	Rule ruleName = new RuleRename("ruleName", new RuleBranchToLeaf( new RuleAnd(new RuleChar(true, _letter) {public String toString() {return "LETTER";}}, new RuleCardinality(0, Integer.MAX_VALUE, false, new RuleChar(true, _letter_or_digit) {public String toString() {return "LETTER|DIGIT";}})) ));
     	Rule rule = new RuleAnd(ruleName, skipSpaces, new RuleChar(false, _eq) {public String toString() {return "'='";}}, skipSpaces, new RuleChar(false, _semiColomn){public String toString() {return "';'";}} ); // ruleName = ;
     	Rule main = new RuleCardinality(1, Integer.MAX_VALUE, false, new RuleAnd(skipSpaces, rule, skipSpaces));
@@ -59,6 +59,6 @@ public class Utils {
         */
         
         System.out.println("START");
-        toLexer("    a=;");
+        toLexer("    a=;    b                   = ;c=;                         d                        =   ;                 ");
     }
 }

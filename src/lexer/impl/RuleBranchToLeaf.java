@@ -4,23 +4,23 @@ import lexer.Leaf;
 
 public class RuleBranchToLeaf implements Rule {
 
-    private final Rule wrapped;
+    private final Rule subRule;
 
-    public RuleBranchToLeaf(Rule wrapped) { this.wrapped = wrapped; }
+    public RuleBranchToLeaf(Rule wrapped) { this.subRule = wrapped; }
 
     @Override
     public Object createInitialState(Context ctx) {
-        return wrapped.createInitialState(ctx);
+        return subRule.createInitialState(ctx);
     }
 
     @Override
     public boolean nextState(Context ctx, Object state) {
-        return wrapped.nextState(ctx, state);
+        return subRule.nextState(ctx, state);
     }
 
     @Override
     public MatchedContent tryToMatch(Context ctx, Object state) {
-        MatchedContent mc = wrapped.tryToMatch(ctx, state);
+        MatchedContent mc = subRule.tryToMatch(ctx, state);
         if (mc!=null && mc.captured!=null) {
             mc.captured = new Leaf(mc.captured.name, mc.captured.stringValue());
         }
@@ -28,6 +28,8 @@ public class RuleBranchToLeaf implements Rule {
     }
     
     @Override
-    public int minSize() { return wrapped.minSize(); }
+    public int minSize() { return subRule.minSize(); }
+    
+    public String toString() { return "flatten "+subRule; }
     
 }

@@ -26,4 +26,6 @@ public class RuleRename implements Rule {
 	
 	@Override public int minSize() { return subRule.minSize(); }
 
+	public String toString() { return name+" = "+subRule+" ;"; };
+	
 }

@@ -50,6 +50,8 @@ public class RuleCardinality implements Rule {
 
     @Override public boolean nextState(Context ctx, Object state) {
         
+    	// idea : for fast-fail, remember which ctx.pos we reached with which states, so that we may know that some states already fail when applied at the given ctx.pos
+    	
     	if (state instanceof StateLessSpecialCase) {
     		StateLessSpecialCase _state = (StateLessSpecialCase) state;
     		if (_state.curr==-2) return false; // the 1st try main have deduced it will never match anyway, so it setted this special -2 value and returned null
@@ -123,7 +125,6 @@ public class RuleCardinality implements Rule {
         		}
         		_state.curr = nbMatches; // setup the best deduced 1st value
     			System.out.println("tryToMatch : special cardinality stateless case, returns with state.curr="+_state.curr);
-        		return new MatchedContent(new Branch("*", matches));
         	} else {
         		for (int i=0; i<_state.curr; i++) {
         			MatchedContent mc = subRule.tryToMatch(ctx, null); // stateless rules have a null state
@@ -142,13 +143,16 @@ public class RuleCardinality implements Rule {
         		}
         	}
         } else {
+        	int nbMatch = 0;
 	        List<Object> subStates = (List<Object>) state;
 	        for (int i=0, l=subStates.size(); i<l; i++) {
 	            MatchedContent mc = subRule.tryToMatch(ctx, subStates.get(i));
 	            if (mc==null) {
+	            	if (nbMatch>=min) break; // we tried to reach subStates.size() matches but with statefull a subRule this is only a best effort
 	                ctx.pos = pos;
 	                return null;
 	            }
+	            nbMatch++;
 	            if (mc.captured!=null) {
 	                if (mc.captured.name.equals("*")) {
 	                	Branch b = (Branch) mc.captured;
@@ -175,6 +179,21 @@ public class RuleCardinality implements Rule {
         this.subRule = subRule;
     }
     
-    public String toString() { return subRule+"{"+min+","+max+"}"+(greedy?"?":""); }
+    public String toString() {
+    	String card;
+    	if (min==0) {
+    		if (max==1) card = "?";
+    		else if (max==Integer.MAX_VALUE) card = "*";
+    		else card = "{"+min+","+max+"}";
+    	} else if (min==1) {
+    		if (max==Integer.MAX_VALUE) card = "+";
+    		else card = "{"+min+","+max+"}";
+    	} else if (max==Integer.MAX_VALUE) {
+    		card = "{"+min+",}";
+    	} else {
+    		card = "{"+min+","+max+"}";
+    	}
+    	return subRule+card+(greedy?"?":"");
+    }
     
 }
