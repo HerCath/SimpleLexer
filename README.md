@@ -28,7 +28,11 @@ You can have a Lexer using 3 different ways :
     DIGIT = '0'..'9' ;
     ruleOr[] = +ruleAnd (WS* '|' WS* +ruleAnd)* ;
     ruleAnd[] = +ruleTerm (WS* +ruleTerm)* ;
-    ruleTerm[] = +charClass | +string | +ruleRef | '(' WS* +ruleOr WS* ')';
+    ruleTerm[] = +'+'? +capturable | '(' WS* +ruleOr WS* ')';
+    capturable = +charClassOr | +string | +ruleRef ;
+    ruleRef = +ruleName ;
+    charClass = +charClassAnd ("||" +charClassAnd)* ;
+    string = '"' ( +!'"' | +!'\' | '\' (+'"'|+'\')) '"' ;
 
 The lexer entry point is the main rule. So at least one rule must be defined with that name.
 

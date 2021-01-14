@@ -4,6 +4,7 @@ public class Context {
     final CharSequence cSeq;
     int pos;
     public Context(CharSequence cSeq) { this.cSeq = cSeq; }
+    int remaining() { return cSeq.length()-pos; }
     char peek() { return cSeq.charAt(pos); }
     char poll() { return cSeq.charAt(pos++); }
     void skip(CharClass cClass) { while (is(cClass)) pos++; }
