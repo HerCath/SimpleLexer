@@ -31,7 +31,11 @@ You can have a Lexer using 3 different ways :
     ruleTerm[] = +'+'? +capturable | '(' WS* +ruleOr WS* ')';
     capturable = +charClassOr | +string | +ruleRef ;
     ruleRef = +ruleName ;
-    charClass = +charClassAnd ("||" +charClassAnd)* ;
+    charClassOr = +charClassAnd ("||" +charClassAnd)* ;
+    charClassAnd = +charClassNot ("&&" +charClassNot)* ;
+    charClassNot = +'!'? +charClassTerm ;
+    charClassTerm = char | +char '..' +char | '(' +charClassOr ')' ;
+    char = +<a real char between simple quote> ;
     string = '"' ( +!'"' | +!'\' | '\' (+'"'|+'\')) '"' ;
 
 The lexer entry point is the main rule. So at least one rule must be defined with that name.
