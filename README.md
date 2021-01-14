@@ -45,10 +45,10 @@ Rules may be defined in any order.
 Inside ruleExpression: char classes, strings and references to another rule may be precedeed by a + to indicate it is captured, otherwise it is discarded. In both cases it must still match.
 
 # Exemples
-the grammar `"main[] = +'a' +'A' ;"` matches `"aA"` and capture `<branch name="main"><leaf name="char" value="a"/><<leaf name="char" value="A"/></branch>`
+the grammar `"main[] = +'a' +'A' ;"` matches `"aA"` and capture `<branch name="main"><leaf name="char" value="a"/><leaf name="char" value="A"/></branch>`
 
 the grammar `"main = +'a' +'A' ;"` matches `"aA"` and capture `<leaf name="main" value="aA"/>`
 
-the grammar `"main = 'a' +'A' ;"` matches `"aA"` and cature `<leaf name="main" value="A"/>`
+the grammar `"main = 'a' +'A' ;"` matches `"aA"` and capture `<leaf name="main" value="A"/>`
 
-To run this last exemple, just do `System.out.println(Utils.toGrammar("main = 'a' +'A' ;").parse("aA"));`
+To run this last exemple, just do `System.out.println(Utils.toLexer("main = 'a' +'A' ;").parse("aA"));`
