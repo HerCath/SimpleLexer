@@ -29,12 +29,12 @@ You can have a Lexer using 3 different ways :
     ruleOr[] = +ruleAnd (WS* '|' WS* +ruleAnd)* ;
     ruleAnd[] = +ruleTerm (WS* +ruleTerm)* ;
     ruleTerm[] = +'+'? +capturable | '(' WS* +ruleOr WS* ')';
-    capturable = +charClassOr | +string | +ruleRef ;
+    capturable[] = +charClassOr | +string | +ruleRef ;
     ruleRef = +ruleName ;
-    charClassOr = +charClassAnd ("||" +charClassAnd)* ;
-    charClassAnd = +charClassNot ("&&" +charClassNot)* ;
-    charClassNot = +'!'? +charClassTerm ;
-    charClassTerm = char | +char '..' +char | '(' +charClassOr ')' ;
+    charClassOr[] = +charClassAnd ("||" +charClassAnd)* ;
+    charClassAnd[] = +charClassNot ("&&" +charClassNot)* ;
+    charClassNot[] = +'!'? +charClassTerm ;
+    charClassTerm[] = char | +char '..' +char | '(' +charClassOr ')' ;
     char = +<a real char between simple quote> ;
     string = '"' ( +!'"' | +!'\' | '\' (+'"'|+'\')) '"' ;
 
