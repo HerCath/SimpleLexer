@@ -17,7 +17,7 @@ You can have a Lexer using 3 different ways :
   3) the hardest way : create one yourself by hand with code
 
 # built-in lexer expression language
-rules[] = WS* (+rule WS*)* ;
+main[] = WS* (+rule WS*)* ;
 rule[] = +ruleName WS* '=' WS* +ruleOr WS* ';' ;
 ruleName = +LETTER (+LETTER|+DIGIT|+'_')* ;
 LETTER = 'a'..'z'|'A'..'Z' ;
@@ -31,3 +31,10 @@ The ruleName may be followed by [], in which case this rule will emit a Branch. 
 The ruleName is case sensitive and must be uniq.
 Rules may be defined in any order.
 Inside ruleExpression, char classes, strings and references to another rule may be precedeed by a + to indicate it is captured, otherwise it is discarded. In both cases it must still match.
+
+# Exemples
+the grammar "main[] = +'a' +'A' ;" matches "aA" and cature <branch name="main"><leaf name="char" value="a"/><<leaf name="char" value="A"/></branch>
+the grammar "main = +'a' +'A' ;" matches "aA" and cature <leaf name="main" value="aA"/>
+the grammar "main = 'a' +'A' ;" matches "aA" and cature <leaf name="main" value="A"/>
+To run this last exemple, just do System.out.println(Utils.toGrammar("main = 'a' +'A' ;").parse("aA"));
+
