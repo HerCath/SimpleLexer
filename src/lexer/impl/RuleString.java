@@ -12,15 +12,12 @@ public class RuleString extends Capturable implements StateLessRule {
         this.cSeq = cSeq;
     }
 
-    @Override
-    public MatchedContent tryToMatch(Context ctx, Object state) {
+    @Override public MatchedContent tryToMatch(Context ctx, Object state) {
         final int pos = ctx.pos;
         int i=0;
-        while (i<cSeq.length()) {
-            if (ctx.is(cSeq.charAt(i))) {
-                i++;
-                ctx.pos++;
-            }
+        while (i<cSeq.length() && ctx.is(cSeq.charAt(i))) {
+            i++;
+            ctx.pos++;
         }
         if (i==cSeq.length()) {
             return new MatchedContent(capture?new Leaf("string", cSeq):null);
@@ -30,5 +27,7 @@ public class RuleString extends Capturable implements StateLessRule {
     }
     
     @Override public int minSize() { return cSeq.length(); }
+    
+    @Override public String toString() { return "\""+cSeq+"\""; }
     
 }

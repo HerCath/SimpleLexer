@@ -44,14 +44,17 @@ public class RuleAnd implements Rule {
         List<Object> subStates = (List<Object>) state;
         List<Node> subMatches = new ArrayList<>(subRules.size());
         for (int i=0, l=subRules.size(); i<l; i++) {
+        	int j = ctx.pos;
+        	System.out.println("Trying subRule #"+i+", starting at pos "+ctx.pos+"");
             Rule subRule = subRules.get(i);
+            System.out.println("\t* this sub rule is "+subRule);
             MatchedContent subMatch = subRule.tryToMatch(ctx, subStates.get(i));
             if (subMatch==null) {
-            	System.out.println("subRule #"+i+" "+subRule+" did not match");
+            	System.out.println("\t* subRule #"+i+" did not match");
                 ctx.pos = pos;
                 return null;
             }
-            System.out.println("subRule #"+i+" "+subRule+" match "+subMatch.captured);
+            System.out.println("\t* subRule #"+i+" "+subRule+" schewed "+(ctx.pos-j)+" chars and matched "+(subMatch.captured==null?" and discarded":" and captured "+subMatch.captured));
             if (subMatch.captured!=null) {
                 if (subMatch.captured.name.equals("*")) {
                     Branch b = (Branch) subMatch.captured;

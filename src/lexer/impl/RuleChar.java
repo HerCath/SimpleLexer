@@ -24,4 +24,6 @@ public class RuleChar extends Capturable implements StateLessRule {
     @Override
     public int minSize() { return 1; }
     
+    @Override
+    public String toString() { return cClass.toString(); }
 }
