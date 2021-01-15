@@ -5,7 +5,9 @@ public interface CharClass {
     public static CharClass fromChar(char c) {
         return new CharClass() {
         	@Override public boolean contains(char a) { return a==c; }
-        	@Override public String toString() { return "'"+c+"'"; }
+        	@Override public String toString() {
+        		return c=='\'' || c == '\\' ? "'\\"+c+"'" : "'"+c+"'";
+        	}
         };
     }
     public static CharClass fromRange(char cStart, char cStop) {
@@ -22,6 +24,14 @@ public interface CharClass {
                 }
                 return false;
             }
+            public String toString() {
+            	StringBuilder sb = new StringBuilder();
+            	sb.append('(').append(cClasses[0]);
+            	for (int i=0; i<cClasses.length; i++) {
+            		sb.append(" || ").append(cClasses[i]);
+            	}
+            	return sb.append(')').toString();
+            }
         };
     }
     public static CharClass and(CharClass...cClasses) {
@@ -32,9 +42,22 @@ public interface CharClass {
                 }
                 return true;
             }
+            public String toString() {
+            	StringBuilder sb = new StringBuilder();
+            	sb.append('(').append(cClasses[0]);
+            	for (int i=0; i<cClasses.length; i++) {
+            		sb.append(" && ").append(cClasses[i]);
+            	}
+            	return sb.append(')').toString();
+            }
         };
     }
     public static CharClass negate(CharClass cClass) {
-        return new CharClass() { @Override public boolean contains(char a) { return !cClass.contains(a); } };
+        return new CharClass() {
+        	@Override public boolean contains(char a) { return !cClass.contains(a); }
+        	public String toString() {
+        		return "!"+cClass;
+        	}
+        };
     }
 }

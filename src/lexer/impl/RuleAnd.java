@@ -40,48 +40,56 @@ public class RuleAnd implements Rule {
 
     @Override
     public MatchedContent tryToMatch(Context ctx, Object state) {
-        final int pos = ctx.pos;
-        List<Object> subStates = (List<Object>) state;
-        List<Node> subMatches = new ArrayList<>(subRules.size());
-        for (int i=0, l=subRules.size(); i<l; i++) {
-        	int j = ctx.pos;
-        	System.out.println("Trying subRule #"+i+", starting at pos "+ctx.pos+"");
-            Rule subRule = subRules.get(i);
-            System.out.println("\t* this sub rule is "+subRule);
-            MatchedContent subMatch = subRule.tryToMatch(ctx, subStates.get(i));
-            if (subMatch==null) {
-            	System.out.println("\t* subRule #"+i+" did not match");
-                ctx.pos = pos;
-                return null;
-            }
-            System.out.println("\t* subRule #"+i+" "+subRule+" schewed "+(ctx.pos-j)+" chars and matched "+(subMatch.captured==null?" and discarded":" and captured "+subMatch.captured));
-            if (subMatch.captured!=null) {
-                if (subMatch.captured.name.equals("*")) {
-                    Branch b = (Branch) subMatch.captured;
-                    subMatches.addAll(b.childs);
-                } else {
-                    subMatches.add(subMatch.captured);
-                }
-            }
-        }
-        return new MatchedContent(new Branch("*", subMatches));
+    	MatchedContent mc = null;
+    	ctx.enter(this);
+    	try {
+    		final int pos = ctx.pos;
+    		TRY : while (true) {
+		        List<Object> subStates = (List<Object>) state;
+		        List<Node> subMatches = new ArrayList<>(subRules.size());
+		        for (int i=0, l=subRules.size(); i<l; i++) {
+		        	int j = ctx.pos;
+		            Rule subRule = subRules.get(i);
+		            MatchedContent subMatch;
+		            try {
+		            	subMatch = subRule.tryToMatch(ctx, subStates.get(i));
+		            } catch (RuntimeException e) {
+		            	System.err.println("RuleAnd Crashed with i="+i+", ctx.pos="+ctx.pos+", ct.remaining="+ctx.remaining()+" on rule "+this);
+		            	throw e;
+		            }
+		            if (subMatch==null) {
+		            	if (nextState(ctx, state)) continue TRY;
+		                ctx.pos = pos;
+		                return null;
+		            }
+		            if (subMatch.captured!=null) {
+		                if (subMatch.captured.name.equals("*")) {
+		                    Branch b = (Branch) subMatch.captured;
+		                    subMatches.addAll(b.childs);
+		                } else {
+		                    subMatches.add(subMatch.captured);
+		                }
+		            }
+		        }
+		        return mc = new MatchedContent(new Branch("*", subMatches));
+    		}
+    	} finally {
+    		ctx.leave(this, mc);
+    	}
     }
     
-    @Override
-    public int minSize() {
-    	int sum = 0;
-    	for (int i=0, l=subRules.size(); i<l;sum+=subRules.get(i++).minSize());
-    	return sum;
-    }
+//    @Override
+//    public int _minSize() {
+//    	int sum = 0;
+//    	for (int i=0, l=subRules.size(); i<l;sum+=subRules.get(i++).minSize(rootRule));
+//    	return sum;
+//    }
     
-
     @Override
     public String toString() {
     	StringBuilder sb = new StringBuilder();
-    	for (Rule subRule:subRules) {
-    		if (sb.length()>0) sb.append(" ");
-    		sb.append(subRule);
-    	}
+    	sb.append("(").append(subRules.get(0)).append(")");
+    	for (int i=1, l=subRules.size(); i<l; sb.append(" (").append(subRules.get(i++)).append(")") );
     	return sb.toString();
     }
 }

@@ -38,24 +38,41 @@ public class RuleOr implements Rule {
 
         if (_state.ruleIdx>=subRules.size()) return false;
 
-        _state.ruleState = subRules.get(0).createInitialState(ctx);;
+        _state.ruleState = subRules.get(_state.ruleIdx).createInitialState(ctx);;
         return true;
     }
 
     @Override
     public MatchedContent tryToMatch(Context ctx, Object state) {
-        State _state = (State) state;
-        return subRules.get(_state.ruleIdx).tryToMatch(ctx, _state.ruleState);
+    	MatchedContent mc = null;
+    	ctx.enter(this);
+    	try {
+	        State _state = (State) state;
+	        while (true) {
+	        	mc=subRules.get(_state.ruleIdx).tryToMatch(ctx, _state.ruleState);
+	        	if (mc!=null) return mc;
+	        	if (!nextState(ctx, _state)) return null;
+	        }
+    	} finally {
+    		ctx.leave(this, mc);
+    	}
     }
+    
+//    @Override
+//    public int minSize(Rule rootRule) {
+//    	int min = Integer.MAX_VALUE;
+//    	for (int i=0, l=subRules.size(); i<l;i++) {
+//    		int ms = subRules.get(i).minSize(rootRule);
+//    		if (min>ms) min=ms;
+//    	}
+//    	return min;
+//    }
     
     @Override
-    public int minSize() {
-    	int min = Integer.MAX_VALUE;
-    	for (int i=0, l=subRules.size(); i<l;i++) {
-    		int ms = subRules.get(i).minSize();
-    		if (min>ms) min=ms;
-    	}
-    	return min;
+    public String toString() {
+    	StringBuilder sb = new StringBuilder();
+    	sb.append("(").append(subRules.get(0)).append(")");
+    	for (int i=1, l=subRules.size(); i<l; sb.append(" | (").append(subRules.get(i++)).append(")") );
+    	return sb.toString();
     }
-    
 }

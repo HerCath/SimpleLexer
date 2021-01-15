@@ -19,12 +19,18 @@ public class RuleRename implements Rule {
 	}
 
 	@Override public MatchedContent tryToMatch(Context ctx, Object state) {
-		MatchedContent mc = subRule.tryToMatch(ctx, state);
-		if (mc != null && mc.captured!=null) mc.captured.name = name;
-		return mc;
+    	MatchedContent mc = null;
+    	ctx.enter(this);
+    	try {
+			mc = subRule.tryToMatch(ctx, state);
+			if (mc != null && mc.captured!=null) mc.captured.name = name;
+			return mc;
+    	} finally {
+    		ctx.leave(this, mc);
+    	}
 	}
 	
-	@Override public int minSize() { return subRule.minSize(); }
+//	@Override public int minSize(Rule rootRule) { return subRule.minSize(rootRule); }
 
 	public String toString() { return name+" = "+subRule+" ;"; };
 	

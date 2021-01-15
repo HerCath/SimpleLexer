@@ -21,12 +21,19 @@ public class RuleRef extends Capturable implements Rule {
 
     @Override
     public MatchedContent tryToMatch(Context ctx, Object state) {
-        MatchedContent mc = rules.get(name).tryToMatch(ctx, state);
-        if (mc!=null && !capture) mc.captured = null;
-        return mc;
+    	MatchedContent mc = null;
+    	ctx.enter(this);
+    	try {
+	        mc = rules.get(name).tryToMatch(ctx, state);
+	        if (mc!=null && !capture) mc.captured = null;
+	        return mc;
+    	} finally {
+    		ctx.leave(this, mc);
+    	}
     }
     
-    @Override
-    public int minSize() { return rules.get(name).minSize(); }
+    public String toString() { return capture ? "+"+name : name; }
+    
+//    @Override public int minSize(Rule rootRule) { return rootRule==this?0:rules.get(name).minSize(rootRule); }
     
 }

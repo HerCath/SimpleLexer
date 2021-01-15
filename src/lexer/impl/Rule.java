@@ -24,7 +24,7 @@ public interface Rule {
      * Returns the smallest size this rule may match. Used to speed-up some treatments with variable cardinalities;   
      * @return
      */
-    int minSize();
+    public default int minSize() { return 1; }
     // idea : also adds a mustContains method returning a CharClass which can also bo used for fast lookups
     // idea2 : same goes with mustNotContains
 }

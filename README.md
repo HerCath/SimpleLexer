@@ -21,22 +21,23 @@ You can have a Lexer using 3 different ways :
   3. the hardest way : create one yourself by hand with code
 
 # built-in lexer expression language
+    WS = ' '||'\t'||'\n'||\'r';
     main[] = WS* (+rule WS*)* ;
     rule[] = +ruleName WS* '=' WS* +ruleOr WS* ';' ;
     ruleName = +LETTER (+LETTER|+DIGIT|+'_')* ;
     LETTER = 'a'..'z'|'A'..'Z' ;
     DIGIT = '0'..'9' ;
     ruleOr[] = +ruleAnd (WS* '|' WS* +ruleAnd)* ;
-    ruleAnd[] = +ruleTerm (WS* +ruleTerm)* ;
+    ruleAnd[] = +ruleTerm (WS+ +ruleTerm)* ;
     ruleTerm[] = +'+'? +capturable | '(' WS* +ruleOr WS* ')';
     capturable[] = +charClassOr | +string | +ruleRef ;
     ruleRef = +ruleName ;
     charClassOr[] = +charClassAnd ("||" +charClassAnd)* ;
     charClassAnd[] = +charClassNot ("&&" +charClassNot)* ;
     charClassNot[] = +'!'? +charClassTerm ;
-    charClassTerm[] = char | +char '..' +char | '(' +charClassOr ')' ;
+    charClassTerm[] = +char | +char '..' +char | '(' +charClassOr ')' ;
     char = +<a real char between simple quote> ;
-    string = '"' ( +!'"' | +!'\' | '\' (+'"'|+'\')) '"' ;
+    string = '"' ( +!('"'||'\') | '\' +('"'||'\')) '"' ;
 
 The lexer entry point is the main rule. So at least one rule must be defined with that name.
 

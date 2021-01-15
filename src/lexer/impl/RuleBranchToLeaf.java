@@ -27,8 +27,7 @@ public class RuleBranchToLeaf implements Rule {
         return mc;
     }
     
-    @Override
-    public int minSize() { return subRule.minSize(); }
+//    @Override public int minSize(Rule rootRule) { return subRule.minSize(rootRule); }
     
     public String toString() { return "flatten "+subRule; }
     

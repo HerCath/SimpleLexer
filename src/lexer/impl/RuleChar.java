@@ -12,18 +12,21 @@ public class RuleChar extends Capturable implements StateLessRule {
     }
 
     @Override public MatchedContent tryToMatch(Context ctx, Object state) {
-        if (ctx.is(cClass)) {
-        	System.out.println("char["+ctx.pos+"]="+ctx.peek()+" matches");
-            char c = ctx.poll(); // poll to consume. needed even when not capturing
-            return new MatchedContent(capture ? new Leaf("char", c) : null);
-        }
-    	System.out.println("char["+ctx.pos+"] does not match (remaining = "+ctx.remaining()+")");
-        return null;
+    	MatchedContent mc = null;
+    	ctx.enter(this);
+    	try {
+	        if (ctx.is(cClass)) {
+	            char c = ctx.poll(); // poll to consume. needed even when not capturing
+	            return mc = new MatchedContent(capture ? new Leaf("char", c) : null);
+	        }
+	        return null;
+    	} finally {
+    		ctx.leave(this, mc);
+    	}
     }
     
-    @Override
-    public int minSize() { return 1; }
+//    @Override public int minSize(Rule rootRule) { return 1; }
     
     @Override
-    public String toString() { return cClass.toString(); }
+    public String toString() { return capture ? "+"+cClass.toString() : cClass.toString(); }
 }
