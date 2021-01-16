@@ -26,11 +26,11 @@ public interface CharClass {
             }
             public String toString() {
             	StringBuilder sb = new StringBuilder();
-            	sb.append('(').append(cClasses[0]);
-            	for (int i=0; i<cClasses.length; i++) {
+            	sb.append('[').append(cClasses[0]);
+            	for (int i=1; i<cClasses.length; i++) {
             		sb.append(" || ").append(cClasses[i]);
             	}
-            	return sb.append(')').toString();
+            	return sb.append(']').toString();
             }
         };
     }
@@ -44,11 +44,11 @@ public interface CharClass {
             }
             public String toString() {
             	StringBuilder sb = new StringBuilder();
-            	sb.append('(').append(cClasses[0]);
-            	for (int i=0; i<cClasses.length; i++) {
+            	sb.append('[').append(cClasses[0]);
+            	for (int i=1; i<cClasses.length; i++) {
             		sb.append(" && ").append(cClasses[i]);
             	}
-            	return sb.append(')').toString();
+            	return sb.append(']').toString();
             }
         };
     }

@@ -32,6 +32,6 @@ public class RuleRename implements Rule {
 	
 //	@Override public int minSize(Rule rootRule) { return subRule.minSize(rootRule); }
 
-	public String toString() { return name+" = "+subRule+" ;"; };
+	public String toString() { return subRule.toString(); };
 	
 }

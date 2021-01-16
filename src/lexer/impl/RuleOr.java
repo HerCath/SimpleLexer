@@ -38,7 +38,7 @@ public class RuleOr implements Rule {
 
         if (_state.ruleIdx>=subRules.size()) return false;
 
-        _state.ruleState = subRules.get(_state.ruleIdx).createInitialState(ctx);;
+        _state.ruleState = subRules.get(_state.ruleIdx).createInitialState(ctx);
         return true;
     }
 
@@ -46,13 +46,17 @@ public class RuleOr implements Rule {
     public MatchedContent tryToMatch(Context ctx, Object state) {
     	MatchedContent mc = null;
     	ctx.enter(this);
+    	State _state = (State) state;
+    	int loop = 0;
     	try {
-	        State _state = (State) state;
 	        while (true) {
+	        	loop++;
 	        	mc=subRules.get(_state.ruleIdx).tryToMatch(ctx, _state.ruleState);
 	        	if (mc!=null) return mc;
-	        	if (!nextState(ctx, _state)) return null;
+	        	if (!nextState(ctx, state)) return null;
 	        }
+    	} catch (Exception e) {
+    		throw new RuntimeException("rule crashed with state at idx "+_state.ruleIdx+"/"+subRules.size()+". It was its loop #"+loop+". Rule is "+this+".", e);
     	} finally {
     		ctx.leave(this, mc);
     	}

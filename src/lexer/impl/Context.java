@@ -38,13 +38,13 @@ public class Context {
     	ParserStack stkElt = stack.peek();
     	try {
     		if (rule!=stkElt.rule)
-    			throw new RuntimeException("We have a rule that is popping up a stack element it does not own. Stack size is "+stack.size()+". Stack rule is "+stkElt.rule+". Rule trying to pop it up is "+rule+".");
+    			System.err.println("We have a rule that is popping up a stack element it does not own. Stack size is "+stack.size()+". Stack rule is "+stkElt.rule+". Rule trying to pop it up is "+rule+".");
 	    	if (mc==null) {
 	    		if (pos != stkElt.pos)
-	    			throw new RuntimeException("We have a rule that did not matched, it entered at pos "+stkElt.pos+" but rolledback at a different location "+pos+". rule is implemented by "+stkElt.rule.getClass()+". It is "+stkElt.rule);
-	    		System.out.println("OUT : Rule "+stkElt.rule+" did not matched.");
+	    			System.err.println("We have a rule that did not matched, it entered at pos "+stkElt.pos+" but rolledback at a different location "+pos+". rule is implemented by "+stkElt.rule.getClass()+". It is "+stkElt.rule);
+	    		System.out.println("FAIL : Rule "+stkElt.rule+" did not matched.");
 	    	} else {
-		    	System.out.print("OUT : Rule "+stkElt.rule+" matched and schewed "+(pos-stkElt.pos)+" chars: "+cSeq.subSequence(stkElt.pos, pos)+". ");
+		    	System.out.print("SUCCESS : Rule "+stkElt.rule+" matched and schewed "+(pos-stkElt.pos)+" chars: "+cSeq.subSequence(stkElt.pos, pos)+". ");
 		    	if (mc.captured!=null) {
 		    		System.out.println("It captured \""+mc.captured.stringValue().replace("\\", "\\\\").replace("\"", "\\\"")+"\".");
 		    	} else {

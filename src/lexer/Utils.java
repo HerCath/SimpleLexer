@@ -84,20 +84,22 @@ public class Utils {
     		),
     		new RuleChar(false, CharClass.fromChar('"'))
     	));
+    	Rule ruleStringRef = new RuleRef(true, "string", ruleRefsMap);
     	Rule charClassOrRef = new RuleRef(true, "charClassOr", ruleRefsMap);
-    	Rule charClassTerm = ruleChar; // TODO : handle charClassRange and '(' + charClassOr + ')' cases
+    	Rule charClassTerm = new RuleRef(true, "char", ruleRefsMap); // TODO : handle charClassRange and '(' + charClassOr + ')' cases
     	Rule charClassNot = charClassTerm; // TODO
     	Rule charClassAnd = charClassNot; // TODO
     	Rule charClassOr = charClassAnd; // TODO
     	Rule capturable = new RuleOr(
     		charClassOr,
-    		ruleString,
-    		ruleRef
+    		ruleStringRef,
+    		new RuleRef(true, "ruleRef", ruleRefsMap)
     	);
+    	Rule capturableRef = new RuleRef(true, "capturable", ruleRefsMap);
     	Rule ruleTerm = new RuleOr(
     		new RuleAnd(
 				new RuleCardinality(0, 1, false, new RuleChar(true, CharClass.fromChar('+'))),
-				capturable
+				capturableRef
 			),
     		new RuleAnd(
     			new RuleChar(false, CharClass.fromChar('(')),
@@ -107,20 +109,22 @@ public class Utils {
     			new RuleChar(false, CharClass.fromChar(')'))
     		)
     	);
+    	Rule ruleTermRef = new RuleRef(true, "ruleTerm", ruleRefsMap);
     	Rule ruleAnd = new RuleAnd(
-			ruleTerm,
+			ruleTermRef,
 			new RuleCardinality(0, Integer.MAX_VALUE, false, new RuleAnd(
 				skipSpaces1,
-				ruleTerm
+				ruleTermRef
 			))
 		);
+    	Rule ruleAndRef = new RuleRef(true, "ruleAnd", ruleRefsMap);
     	Rule ruleOr = new RuleAnd(
-    		ruleAnd,
+    		ruleAndRef,
     		new RuleCardinality(0, Integer.MAX_VALUE, false, new RuleAnd(
    				skipSpaces,
    				PIPE,
    				skipSpaces,
-   	    		ruleAnd
+   	    		ruleAndRef
     		))
     	);
     	Rule rule = new RuleAnd(
@@ -137,7 +141,12 @@ public class Utils {
     	ruleRefsMap.put("ruleAnd", ruleAnd);
     	ruleRefsMap.put("ruleTerm", ruleTerm);
     	ruleRefsMap.put("capturable", capturable);
-    	Rule main = new RuleCardinality(1, Integer.MAX_VALUE, false, new RuleAnd(skipSpaces, rule, skipSpaces));
+    	ruleRefsMap.put("string", ruleString);
+    	ruleRefsMap.put("char", ruleChar);
+    	Rule main = new RuleAnd(
+    		skipSpaces,
+    		new RuleCardinality(1, Integer.MAX_VALUE, false, new RuleAnd(rule, skipSpaces))
+    	);
     	System.out.println("lexer main rule minimal size is "+main.minSize());
     	LEXER_PARSER = toLexer(main);
 //    	System.exit(0);

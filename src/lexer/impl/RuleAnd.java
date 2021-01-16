@@ -50,16 +50,10 @@ public class RuleAnd implements Rule {
 		        for (int i=0, l=subRules.size(); i<l; i++) {
 		        	int j = ctx.pos;
 		            Rule subRule = subRules.get(i);
-		            MatchedContent subMatch;
-		            try {
-		            	subMatch = subRule.tryToMatch(ctx, subStates.get(i));
-		            } catch (RuntimeException e) {
-		            	System.err.println("RuleAnd Crashed with i="+i+", ctx.pos="+ctx.pos+", ct.remaining="+ctx.remaining()+" on rule "+this);
-		            	throw e;
-		            }
+		            MatchedContent subMatch = subRule.tryToMatch(ctx, subStates.get(i));
 		            if (subMatch==null) {
-		            	if (nextState(ctx, state)) continue TRY;
 		                ctx.pos = pos;
+		                if (nextState(ctx, state)) continue TRY;
 		                return null;
 		            }
 		            if (subMatch.captured!=null) {

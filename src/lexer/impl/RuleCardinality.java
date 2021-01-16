@@ -28,7 +28,7 @@ public class RuleCardinality implements Rule {
             // rules should at least capture one char, so we could not eat more patterns than what is remaining. we use this property to not start with a max value being Integer.MAX_VALUE
         	int minSize = 1;//subRule.minSize();
         	int maxOcc = (ctx.remaining()+minSize-1)/minSize;
-        	System.out.println("Our sub rule has a min size of "+minSize+" and there are "+ctx.remaining()+" chars left so this make for up to "+maxOcc);
+//        	System.out.println("Our sub rule has a min size of "+minSize+" and there are "+ctx.remaining()+" chars left so this make for up to "+maxOcc);
             return createInitialState(ctx, Math.min(maxOcc, max));
         }
     }
@@ -46,7 +46,7 @@ public class RuleCardinality implements Rule {
                 return true;
             }
         }
-        System.out.println("state of size "+subStates.size()+" did not match. Going to change its size");
+//        System.out.println("state of size "+subStates.size()+" did not match. Going to change its size");
         // if we reached this line, this means we have exhausted all permutations of state from the subRule for current cardinality
         // we then adjust the cardinality according to min/max/greedy
         int curr = subStates.size();
@@ -70,16 +70,20 @@ public class RuleCardinality implements Rule {
     	ctx.enter(this);
     	try {
 	        final int pos = ctx.pos;
+	        int nbMatch = 0;
+	        final List<Node> matches = new ArrayList<>();
+	        final List<Object> subStates = (List<Object>) state;
 	        TRY : while (true) {
-		        List<Node> matches = new ArrayList<>();
-	        	int nbMatch = 0;
-		        List<Object> subStates = (List<Object>) state;
 		        for (int i=0, l=subStates.size(); i<l; i++) {
 		            MatchedContent subMatch = subRule.tryToMatch(ctx, subStates.get(i));
 		            if (subMatch==null) {
 		            	if (nbMatch>=min) break; // we tried to reach subStates.size() matches but with statefull a subRule this is only a best effort
-		            	if (nextState(ctx, state)) continue TRY;
 		                ctx.pos = pos;
+		                if (nextState(ctx, state)) {
+		                	nbMatch = 0;
+		                	matches.clear();
+		                	continue TRY;
+		                }
 		                return null;
 		            }
 		            nbMatch++;
