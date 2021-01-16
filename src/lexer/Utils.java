@@ -1,6 +1,7 @@
 package lexer;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import lexer.impl.*;
@@ -18,12 +19,12 @@ public class Utils {
         return new Lexer() {
             @Override public Node parse(CharSequence input) {
                 Context ctx = new Context(input);
-                Object state = rule.createInitialState(ctx);
-                while (true) {
-                    MatchedContent mc = rule.tryToMatch(ctx, state);
+                Iterator<Object> states = rule.getStates(ctx);
+                while (states.hasNext()) {
+                    MatchedContent mc = rule.match(ctx, states);
                     if (mc != null) return mc.captured;
-                    if (!rule.nextState(ctx, state)) return null;
-                }
+				}
+				return null;
             }
         };
     }
@@ -147,7 +148,6 @@ public class Utils {
     		skipSpaces,
     		new RuleCardinality(1, Integer.MAX_VALUE, false, new RuleAnd(rule, skipSpaces))
     	);
-    	System.out.println("lexer main rule minimal size is "+main.minSize());
     	LEXER_PARSER = toLexer(main);
 //    	System.exit(0);
     }
@@ -172,8 +172,20 @@ public class Utils {
 //        Rule AB = new RuleString(true, "AB");
 //        Rule main = new RuleAnd(uppers, AB);
 //        System.out.println(toLexer(main).parse("AAAB"));
-        
-        System.out.println("START");
-        toLexer("r='A';");
+		
+		Rule r = new RuleOr(
+			new RuleOr(
+				new RuleChar(true, CharClass.fromChar('A')),
+				new RuleChar(true, CharClass.fromChar('B'))
+			),
+			new RuleOr(
+				new RuleChar(true, CharClass.fromChar('C')),
+				new RuleChar(true, CharClass.fromChar('D'))
+			)
+		);
+		System.out.println(toLexer(r).parse("D"));
+
+        //System.out.println("START");
+        //toLexer("r='A';");
     }
 }

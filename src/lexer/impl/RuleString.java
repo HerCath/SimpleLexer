@@ -1,5 +1,7 @@
 package lexer.impl;
 
+import java.util.Iterator;
+
 import lexer.Leaf;
 
 public class RuleString extends Capturable implements StateLessRule {
@@ -12,10 +14,12 @@ public class RuleString extends Capturable implements StateLessRule {
         this.cSeq = cSeq;
     }
 
-    @Override public MatchedContent tryToMatch(Context ctx, Object state) {
+    @Override public MatchedContent match(Context ctx, Iterator<Object> states) {
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
+			if (!states.hasNext()) return null;
+			states.next();
 	        final int pos = ctx.pos;
 	        int i=0;
 	        while (i<cSeq.length() && ctx.is(cSeq.charAt(i))) {
@@ -31,8 +35,6 @@ public class RuleString extends Capturable implements StateLessRule {
     		ctx.leave(this, mc);
     	}
     }
-    
-//    @Override public int minSize(Rule rootRule) { return cSeq.length(); }
     
     @Override public String toString() { return "\""+cSeq+"\""; }
     

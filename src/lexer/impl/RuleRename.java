@@ -1,5 +1,7 @@
 package lexer.impl;
 
+import java.util.Iterator;
+
 public class RuleRename implements Rule {
 
 	final String name;
@@ -10,19 +12,16 @@ public class RuleRename implements Rule {
 		this.subRule = subRule;
 	}
 
-	@Override public Object createInitialState(Context ctx) {
-		return subRule.createInitialState(ctx);
+	@Override public Iterator<Object> getStates(Context ctx) {
+		return subRule.getStates(ctx);
 	}
 
-	@Override public boolean nextState(Context ctx, Object state) {
-		return subRule.nextState(ctx, state);
-	}
-
-	@Override public MatchedContent tryToMatch(Context ctx, Object state) {
+	@Override public MatchedContent match(Context ctx, Iterator<Object> states) {
+        if (!states.hasNext()) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
-			mc = subRule.tryToMatch(ctx, state);
+			mc = subRule.match(ctx, states);
 			if (mc != null && mc.captured!=null) mc.captured.name = name;
 			return mc;
     	} finally {

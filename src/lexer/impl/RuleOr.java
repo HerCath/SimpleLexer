@@ -2,61 +2,61 @@ package lexer.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 public class RuleOr implements Rule {
 
     final List<Rule> subRules;
-
-    static class State {
-        int ruleIdx;
-        Object ruleState;
-    }
     
     public RuleOr() { subRules = new ArrayList<>(); }
     public RuleOr(List<Rule> subRules) { this.subRules = subRules; }
     public RuleOr(Rule...subRules) { this(Arrays.asList(subRules)); }
 
-	@Override
-    public Object createInitialState(Context ctx) {
-        State state = new State();
-        state.ruleIdx = 0;
-        state.ruleState = subRules.get(0).createInitialState(ctx);
-        return state;
+    private static class RuleOrState implements Iterator<Object> {
+        private Context ctx;
+        private Iterator<Rule> subRules;
+        private Rule subRule;
+        private Iterator<Object> currentSubRuleStates;
+
+        RuleOrState(Context ctx, Iterator<Rule> subRules) {
+            this.ctx = ctx;
+            this.subRules = subRules;
+        }
+
+        @Override public boolean hasNext() {
+            while (true) {
+                while (currentSubRuleStates==null) {
+                    if (!subRules.hasNext()) return false;
+                    subRule=subRules.next();
+                    currentSubRuleStates=subRule.getStates(ctx);
+                }
+                if (currentSubRuleStates.hasNext()) return true;
+                currentSubRuleStates = null;
+            }
+        }
+
+        @Override public Object next() {
+            return null;
+        }
     }
 
-    @Override
-    public boolean nextState(Context ctx, Object state) {
-        State _state = (State) state;
-
-        if (_state.ruleIdx>=subRules.size()) return false;
-
-        if (subRules.get(_state.ruleIdx).nextState(ctx, _state.ruleState)) return true;
-
-        _state.ruleIdx++;
-        _state.ruleState = null;
-
-        if (_state.ruleIdx>=subRules.size()) return false;
-
-        _state.ruleState = subRules.get(_state.ruleIdx).createInitialState(ctx);
-        return true;
+	@Override public Iterator<Object> getStates(Context ctx) {
+        return new RuleOrState(ctx, subRules.iterator());
     }
 
-    @Override
-    public MatchedContent tryToMatch(Context ctx, Object state) {
+    @Override public MatchedContent match(Context ctx, Iterator<Object> states) {
+        if (!states.hasNext()) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
-    	State _state = (State) state;
-    	int loop = 0;
     	try {
-	        while (true) {
-	        	loop++;
-	        	mc=subRules.get(_state.ruleIdx).tryToMatch(ctx, _state.ruleState);
-	        	if (mc!=null) return mc;
-	        	if (!nextState(ctx, state)) return null;
-	        }
-    	} catch (Exception e) {
-    		throw new RuntimeException("rule crashed with state at idx "+_state.ruleIdx+"/"+subRules.size()+". It was its loop #"+loop+". Rule is "+this+".", e);
+            RuleOrState _states = (RuleOrState) states;
+            do {
+                states.next();
+                mc=_states.subRule.match(ctx, _states.currentSubRuleStates);
+                if (mc!=null) return mc;
+            } while (states.hasNext());
+            return null;
     	} finally {
     		ctx.leave(this, mc);
     	}

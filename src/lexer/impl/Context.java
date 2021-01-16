@@ -21,7 +21,7 @@ public class Context {
 	
     final CharSequence cSeq;
     int pos;
-    Stack<ParserStack> stack = new Stack();
+    Stack<ParserStack> stack = new Stack<>();
     
     void enter(Rule rule) {
     	stack.push(new ParserStack(rule, pos));

@@ -2,6 +2,8 @@ package lexer.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import lexer.Branch;
@@ -16,30 +18,15 @@ public class RuleAnd implements Rule {
     public RuleAnd(Rule...subRules) { this(Arrays.asList(subRules)); }
 
     @Override
-    public Object createInitialState(Context ctx) {
-        List<Object> subStates = new ArrayList<>(subRules.size());
-        for (int i=0, l=subRules.size(); i<l; i++) {
-            subStates.add(subRules.get(i).createInitialState(ctx));
-        }
-        return subStates;
+    public Iterator<Object> getStates(Context ctx) {
+        return Collections.emptyIterator();
     }
 
     @Override
-    public boolean nextState(Context ctx, Object state) {
-        List<Object> subStates = (List<Object>) state;
-        for (int i=0, l=subRules.size(); i<l; i++) {
-            if (subRules.get(i).nextState(ctx, subStates.get(i))) {
-                for (int j=0; j<i; j++) {
-                    subStates.set(j, subRules.get(j).createInitialState(ctx));
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public MatchedContent tryToMatch(Context ctx, Object state) {
+    public MatchedContent match(Context ctx, Iterator<Object> state) {
+		// TODO : re-implement
+		return null;
+		/*
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
@@ -69,7 +56,8 @@ public class RuleAnd implements Rule {
     		}
     	} finally {
     		ctx.leave(this, mc);
-    	}
+		}
+		*/
     }
     
 //    @Override
