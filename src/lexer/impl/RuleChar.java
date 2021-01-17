@@ -1,7 +1,5 @@
 package lexer.impl;
 
-import java.util.Iterator;
-
 import lexer.Leaf;
 
 public class RuleChar extends Capturable implements StateLessRule {
@@ -13,12 +11,13 @@ public class RuleChar extends Capturable implements StateLessRule {
         this.cClass = cClass;
     }
 
-    @Override public MatchedContent match(Context ctx, Iterator<Object> states) {
+    @Override public MatchedContent match(Context ctx, States states) {
+    	if (!states.hasNext(ctx)) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
-			if (!states.hasNext()) return null;
-			states.next();
+//    		System.out.println("RuleChar for "+cClass+" is being evaluated with states "+states);
+			//states.next(ctx);
 	        if (ctx.is(cClass)) {
 	            char c = ctx.poll(); // poll to consume. needed even when not capturing
 	            return mc = new MatchedContent(capture ? new Leaf("char", c) : null);

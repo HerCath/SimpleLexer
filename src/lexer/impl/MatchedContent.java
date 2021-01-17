@@ -11,4 +11,5 @@ import lexer.Node;
 public class MatchedContent {
 	public Node captured;
     public MatchedContent(Node captured) { this.captured = captured; }
+    public String toString() { return "MacthedContext{captured="+(captured!=null?captured.stringValue():"null")+"}"; }
 }

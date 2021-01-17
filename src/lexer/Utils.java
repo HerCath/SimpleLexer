@@ -19,8 +19,8 @@ public class Utils {
         return new Lexer() {
             @Override public Node parse(CharSequence input) {
                 Context ctx = new Context(input);
-                Iterator<Object> states = rule.getStates(ctx);
-                while (states.hasNext()) {
+                States states = rule.createStates(ctx);
+                while (states.hasNext(ctx)) {
                     MatchedContent mc = rule.match(ctx, states);
                     if (mc != null) return mc.captured;
 				}
@@ -173,17 +173,63 @@ public class Utils {
 //        Rule main = new RuleAnd(uppers, AB);
 //        System.out.println(toLexer(main).parse("AAAB"));
 		
-		Rule r = new RuleOr(
-			new RuleOr(
-				new RuleChar(true, CharClass.fromChar('A')),
-				new RuleChar(true, CharClass.fromChar('B'))
-			),
-			new RuleOr(
-				new RuleChar(true, CharClass.fromChar('C')),
-				new RuleChar(true, CharClass.fromChar('D'))
-			)
+    	Rule A = new RuleChar(true, CharClass.fromChar('A'));
+    	Rule B = new RuleChar(true, CharClass.fromChar('B'));
+    	Rule C = new RuleChar(true, CharClass.fromChar('C'));
+    	Rule D = new RuleChar(true, CharClass.fromChar('D')); 
+    	Rule A_or_B = new RuleOr(A, B);
+    	Rule C_or_D = new RuleOr(C, D);
+    	Rule A_and_B = new RuleAnd(A, B);
+		Rule A_or_B__or__C_or_D = new RuleOr(
+			A_or_B,
+			C_or_D
 		);
-		System.out.println(toLexer(r).parse("D"));
+//		Context ctx = new Context("D");
+//		States states = D.createStates(ctx);
+//		System.out.println(D.match(ctx, states));
+//		ctx.pos = 0;
+//		System.out.println(D.match(ctx, states));
+//		ctx.pos = 0;
+//		states = C_or_D.createStates(ctx);
+//		while (states.hasNext(ctx)) {
+//			System.out.println("After hasNext, state "+states);
+//			states.next(ctx);
+//			System.out.println("After next, new state is "+states);
+////			MatchedContent mc = C_or_D.match(ctx, states);
+////			System.out.println("It macthed "+mc);
+//		}
+//		System.out.println("Last state is "+states);
+//		System.out.println(toLexer(D).parse("D"));
+		Rule CD = new RuleString(true, "CD");
+		Rule C_or_D__and__C_or_D = new RuleAnd(C_or_D, C_or_D);
+		Rule CD___or___C_or_D__and__C_or_D = new RuleOr(CD, C_or_D__and__C_or_D);
+//		Context ctx = new Context("CD");
+//		States states = CD___or___C_or_D__and__C_or_D.createStates(ctx);
+//		while (true) {
+//			ctx.pos = 0;
+//			if (states.hasNext(ctx)) {
+//				MatchedContent mc = CD___or___C_or_D__and__C_or_D.match(ctx, states);
+//				System.out.println(mc);
+//				if (mc != null) {
+//					ctx.pos = 0;
+//					states.next(ctx);
+//				}
+//			} else {
+//				break;
+//			}
+//		}
+//		System.out.println(toLexer().parse("DC"));
+//		System.exit(0);
+//		Context ctx = new Context("D");
+//		States states = C_or_D.createStates(ctx);
+//		int i = 0;
+//		while (states.hasNext(ctx)) {
+//			System.out.println("states["+(i++)+"] = "+states);
+//			states.next(ctx);
+//		}
+//		System.out.println("states["+(i++)+"] = "+states);
+		System.out.println(toLexer(C_or_D__and__C_or_D).parse("DD"));
+//		System.out.println(toLexer(A_or_B__or__C_or_D).parse("D"));
 
         //System.out.println("START");
         //toLexer("r='A';");

@@ -20,7 +20,7 @@ public class Context {
 	}
 	
     final CharSequence cSeq;
-    int pos;
+    public int pos;
     Stack<ParserStack> stack = new Stack<>();
     
     void enter(Rule rule) {

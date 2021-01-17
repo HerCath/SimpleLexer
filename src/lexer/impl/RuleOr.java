@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class RuleOr implements Rule {
 
@@ -12,65 +13,51 @@ public class RuleOr implements Rule {
     public RuleOr() { subRules = new ArrayList<>(); }
     public RuleOr(List<Rule> subRules) { this.subRules = subRules; }
     public RuleOr(Rule...subRules) { this(Arrays.asList(subRules)); }
-
-    private static class RuleOrState implements Iterator<Object> {
-        private Context ctx;
-        private Iterator<Rule> subRules;
-        private Rule subRule;
-        private Iterator<Object> currentSubRuleStates;
-
-        RuleOrState(Context ctx, Iterator<Rule> subRules) {
-            this.ctx = ctx;
-            this.subRules = subRules;
-        }
-
-        @Override public boolean hasNext() {
-            while (true) {
-                while (currentSubRuleStates==null) {
-                    if (!subRules.hasNext()) return false;
-                    subRule=subRules.next();
-                    currentSubRuleStates=subRule.getStates(ctx);
-                }
-                if (currentSubRuleStates.hasNext()) return true;
-                currentSubRuleStates = null;
-            }
-        }
-
-        @Override public Object next() {
-            return null;
-        }
+    
+    class RuleOrStates extends States {
+    	private int subRuleIdx;
+    	private States subRuleStates;
+    	RuleOrStates(Context ctx) {
+    		super(ctx);
+    	}
+    	protected boolean _hasNext(Context ctx) {
+    		while (subRuleIdx<subRules.size()) {
+    			if (subRuleStates == null) subRuleStates = subRules.get(subRuleIdx).createStates(ctx);
+    			if (subRuleStates.hasNext(ctx)) return true;
+    			subRuleStates = null;
+    			subRuleIdx++;
+    		}
+    		return false;
+    	}
+    	protected void _next(Context ctx) {
+    		hasNext(ctx);
+    		subRuleStates.next(ctx);
+    	}
+    	public String toString() {
+    		return "OR["+subRuleIdx+"/"+subRules.size()+"].states="+subRuleStates;
+    	}
     }
 
-	@Override public Iterator<Object> getStates(Context ctx) {
-        return new RuleOrState(ctx, subRules.iterator());
+	@Override public States createStates(Context ctx) {
+        return new RuleOrStates(ctx);
     }
 
-    @Override public MatchedContent match(Context ctx, Iterator<Object> states) {
-        if (!states.hasNext()) return null;
+    @Override public MatchedContent match(Context ctx, States states) {
+        if (!states.hasNext(ctx)) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
-            RuleOrState _states = (RuleOrState) states;
+            RuleOrStates _states = (RuleOrStates) states;
             do {
-                states.next();
-                mc=_states.subRule.match(ctx, _states.currentSubRuleStates);
+                mc=subRules.get(_states.subRuleIdx).match(ctx, _states.subRuleStates);
                 if (mc!=null) return mc;
-            } while (states.hasNext());
+                states.next(ctx);
+            } while (states.hasNext(ctx));
             return null;
     	} finally {
     		ctx.leave(this, mc);
     	}
     }
-    
-//    @Override
-//    public int minSize(Rule rootRule) {
-//    	int min = Integer.MAX_VALUE;
-//    	for (int i=0, l=subRules.size(); i<l;i++) {
-//    		int ms = subRules.get(i).minSize(rootRule);
-//    		if (min>ms) min=ms;
-//    	}
-//    	return min;
-//    }
     
     @Override
     public String toString() {

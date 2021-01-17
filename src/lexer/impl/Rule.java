@@ -11,9 +11,9 @@ public interface Rule {
     /**
      * Creates and returns the states Iterator to use when matching.
      */
-    Iterator<Object> getStates(Context ctx);
+    States createStates(Context ctx);
     /**
      * Match or not some content consumming possible states until one matched or no more exists.
      */
-    MatchedContent match(Context ctx, Iterator<Object> states);
+    MatchedContent match(Context ctx, States states);
 }

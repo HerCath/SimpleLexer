@@ -1,7 +1,5 @@
 package lexer.impl;
 
-import java.util.Iterator;
-
 import lexer.Leaf;
 
 public class RuleBranchToLeaf implements Rule {
@@ -10,10 +8,10 @@ public class RuleBranchToLeaf implements Rule {
 
     public RuleBranchToLeaf(Rule subRule) { this.subRule = subRule; }
 
-    @Override public Iterator<Object> getStates(Context ctx) { return subRule.getStates(ctx); }
+    @Override public States createStates(Context ctx) { return subRule.createStates(ctx); }
 
-    @Override public MatchedContent match(Context ctx, Iterator<Object> states) {
-        if (!states.hasNext()) return null;
+    @Override public MatchedContent match(Context ctx, States states) {
+        if (!states.hasNext(ctx)) return null;
         MatchedContent mc = subRule.match(ctx, states);
         if (mc!=null && mc.captured!=null) {
             mc.captured = new Leaf(mc.captured.name, mc.captured.stringValue());

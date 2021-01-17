@@ -1,6 +1,5 @@
 package lexer.impl;
 
-import java.util.Iterator;
 import java.util.Map;
 
 public class RuleRef extends Capturable implements Rule {
@@ -14,10 +13,10 @@ public class RuleRef extends Capturable implements Rule {
         this.rules = rules;
     }
 
-    @Override public Iterator<Object> getStates(Context ctx) { return rules.get(name).getStates(ctx); }
+    @Override public States createStates(Context ctx) { return rules.get(name).createStates(ctx); }
 
-    @Override public MatchedContent match(Context ctx, Iterator<Object> states) {
-        if (!states.hasNext()) return null;
+    @Override public MatchedContent match(Context ctx, States states) {
+        if (!states.hasNext(ctx)) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {

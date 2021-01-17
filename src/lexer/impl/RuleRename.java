@@ -12,12 +12,12 @@ public class RuleRename implements Rule {
 		this.subRule = subRule;
 	}
 
-	@Override public Iterator<Object> getStates(Context ctx) {
-		return subRule.getStates(ctx);
+	@Override public States createStates(Context ctx) {
+		return subRule.createStates(ctx);
 	}
 
-	@Override public MatchedContent match(Context ctx, Iterator<Object> states) {
-        if (!states.hasNext()) return null;
+	@Override public MatchedContent match(Context ctx, States states) {
+        if (!states.hasNext(ctx)) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
