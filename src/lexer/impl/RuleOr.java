@@ -2,11 +2,10 @@ package lexer.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
+import lexer.impl.RuleOr.RuleOrStates;
 
-public class RuleOr implements Rule<RuleOr.RuleOrStates> {
+public class RuleOr implements Rule<RuleOrStates> {
 
     final List<Rule> subRules;
     
@@ -23,11 +22,11 @@ public class RuleOr implements Rule<RuleOr.RuleOrStates> {
     	}
     }
 
-	@Override public RuleOr.RuleOrStates createState(Context ctx) {
+	@Override public RuleOrStates createState(Context ctx) {
         return new RuleOrStates(ctx);
     }
 
-    @Override public MatchedContent match(Context ctx, RuleOr.RuleOrStates state) {
+    @Override public MatchedContent match(Context ctx, RuleOrStates state) {
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {

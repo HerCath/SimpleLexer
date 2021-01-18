@@ -200,8 +200,8 @@ public class Utils {
 		Rule CD = new RuleString(true, "CD");
 		Rule C_or_D__and__C_or_D = new RuleAnd(C_or_D, C_or_D);
 		Rule CD___or___C_or_D__and__C_or_D = new RuleOr(CD, C_or_D__and__C_or_D);
-		Context ctx = new Context("D");
-		Rule tested = new RuleOr(C_or_D, C_or_D);
+		Rule tested = A_and_B;
+		Context ctx = new Context("AB");
 		State state = tested.createState(ctx);
 		while (true) {
 			ctx.pos = 0;
