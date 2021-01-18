@@ -1,19 +1,17 @@
 package lexer.impl;
 
-import java.util.Iterator;
-
 /**
  * Rules are stateless piece of logic that try to match some content. The 3
  * methods will be called in that order #1 createInitialState #2 tryToMatch #3
  * nextState, and if true got back to #2
  */
-public interface Rule {
+public interface Rule<STATE extends State> {
     /**
      * Creates and returns the states Iterator to use when matching.
      */
-    States createStates(Context ctx);
+    STATE createState(Context ctx);
     /**
-     * Match or not some content consumming possible states until one matched or no more exists.
+     * Returns next preferred match. Returns null once no more matches.
      */
-    MatchedContent match(Context ctx, States states);
+    MatchedContent match(Context ctx, STATE state);
 }

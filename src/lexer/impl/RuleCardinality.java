@@ -15,12 +15,12 @@ public class RuleCardinality implements Rule {
     public final boolean greedy;
     public final Rule subRule;
 
-    @Override public States createStates(Context ctx) {
+    @Override public State createStates(Context ctx) {
         // TODO : re-implement
         return null;
     }
 
-    @Override public MatchedContent match(Context ctx, States state) {
+    @Override public MatchedContent match(Context ctx, State state) {
         // TODO : re-implement
         return null;
     }

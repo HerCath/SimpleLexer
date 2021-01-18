@@ -2,7 +2,7 @@ package lexer.impl;
 
 import java.util.Map;
 
-public class RuleRef extends Capturable implements Rule {
+public class RuleRef extends Capturable implements Rule<State> {
 
     final String name;
     final Map<String, Rule> rules;
@@ -13,14 +13,13 @@ public class RuleRef extends Capturable implements Rule {
         this.rules = rules;
     }
 
-    @Override public States createStates(Context ctx) { return rules.get(name).createStates(ctx); }
+    @Override public State createState(Context ctx) { return rules.get(name).createState(ctx); }
 
-    @Override public MatchedContent match(Context ctx, States states) {
-        if (!states.hasNext(ctx)) return null;
+    @Override public MatchedContent match(Context ctx, State state) {
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
-	        mc = rules.get(name).match(ctx, states);
+	        mc = rules.get(name).match(ctx, state);
 	        if (mc!=null && !capture) mc.captured = null;
 	        return mc;
     	} finally {

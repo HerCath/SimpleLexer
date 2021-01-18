@@ -2,7 +2,7 @@ package lexer.impl;
 
 import lexer.Leaf;
 
-public class RuleString extends Capturable implements StateLessRule {
+public class RuleString extends Capturable implements SingleMatchRule {
 
     final CharSequence cSeq;
 
@@ -12,12 +12,12 @@ public class RuleString extends Capturable implements StateLessRule {
         this.cSeq = cSeq;
     }
 
-    @Override public MatchedContent match(Context ctx, States states) {
-    	if (!states.hasNext(ctx)) return null;
+    @Override public MatchedContent match(Context ctx, SingleMatchState state) {
+    	if (state.hasBeenUsed) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
-//			states.next(ctx);
+    		state.hasBeenUsed = true;
 	        final int pos = ctx.pos;
 	        int i=0;
 	        while (i<cSeq.length() && ctx.is(cSeq.charAt(i))) {

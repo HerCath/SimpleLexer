@@ -2,7 +2,7 @@ package lexer.impl;
 
 import java.util.Iterator;
 
-public class RuleRename implements Rule {
+public class RuleRename implements Rule<State> {
 
 	final String name;
 	final Rule subRule;
@@ -12,24 +12,21 @@ public class RuleRename implements Rule {
 		this.subRule = subRule;
 	}
 
-	@Override public States createStates(Context ctx) {
-		return subRule.createStates(ctx);
+	@Override public State createState(Context ctx) {
+		return subRule.createState(ctx);
 	}
 
-	@Override public MatchedContent match(Context ctx, States states) {
-        if (!states.hasNext(ctx)) return null;
+	@Override public MatchedContent match(Context ctx, State state) {
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
-			mc = subRule.match(ctx, states);
+			mc = subRule.match(ctx, state);
 			if (mc != null && mc.captured!=null) mc.captured.name = name;
 			return mc;
     	} finally {
     		ctx.leave(this, mc);
     	}
 	}
-	
-//	@Override public int minSize(Rule rootRule) { return subRule.minSize(rootRule); }
 
 	public String toString() { return subRule.toString(); };
 	

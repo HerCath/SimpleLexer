@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class RuleOr implements Rule {
+public class RuleOr implements Rule<RuleOr.RuleOrStates> {
 
     final List<Rule> subRules;
     
@@ -14,46 +14,33 @@ public class RuleOr implements Rule {
     public RuleOr(List<Rule> subRules) { this.subRules = subRules; }
     public RuleOr(Rule...subRules) { this(Arrays.asList(subRules)); }
     
-    class RuleOrStates extends States {
+    class RuleOrStates extends State {
     	private int subRuleIdx;
-    	private States subRuleStates;
-    	RuleOrStates(Context ctx) {
-    		super(ctx);
-    	}
-    	protected boolean _hasNext(Context ctx) {
-    		while (subRuleIdx<subRules.size()) {
-    			if (subRuleStates == null) subRuleStates = subRules.get(subRuleIdx).createStates(ctx);
-    			if (subRuleStates.hasNext(ctx)) return true;
-    			subRuleStates = null;
-    			subRuleIdx++;
-    		}
-    		return false;
-    	}
-    	protected void _next(Context ctx) {
-    		hasNext(ctx);
-    		subRuleStates.next(ctx);
-    	}
+    	private State subRuleState;
+    	RuleOrStates(Context ctx) { super(ctx); }
     	public String toString() {
-    		return "OR["+subRuleIdx+"/"+subRules.size()+"].states="+subRuleStates;
+    		return "OR["+subRuleIdx+"/"+subRules.size()+"].states="+subRuleState;
     	}
     }
 
-	@Override public States createStates(Context ctx) {
+	@Override public RuleOr.RuleOrStates createState(Context ctx) {
         return new RuleOrStates(ctx);
     }
 
-    @Override public MatchedContent match(Context ctx, States states) {
-        if (!states.hasNext(ctx)) return null;
+    @Override public MatchedContent match(Context ctx, RuleOr.RuleOrStates state) {
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
-            RuleOrStates _states = (RuleOrStates) states;
-            do {
-                mc=subRules.get(_states.subRuleIdx).match(ctx, _states.subRuleStates);
+            while (true) {
+//            	System.out.println("DEBUG 1 Inside OR loop, state is "+state);
+            	if (state.subRuleIdx>=subRules.size()) return null;
+            	if (state.subRuleState==null) state.subRuleState = subRules.get(state.subRuleIdx).createState(ctx);
+//            	System.out.println("DEBUG 2 Inside OR loop, state is "+state);
+                mc = subRules.get(state.subRuleIdx).match(ctx, state.subRuleState);
                 if (mc!=null) return mc;
-                states.next(ctx);
-            } while (states.hasNext(ctx));
-            return null;
+                state.subRuleIdx++;
+                state.subRuleState = null;
+            }
     	} finally {
     		ctx.leave(this, mc);
     	}

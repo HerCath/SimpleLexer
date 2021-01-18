@@ -2,7 +2,7 @@ package lexer.impl;
 
 import lexer.Leaf;
 
-public class RuleChar extends Capturable implements StateLessRule {
+public class RuleChar extends Capturable implements SingleMatchRule {
 
     final CharClass cClass;
 
@@ -11,13 +11,12 @@ public class RuleChar extends Capturable implements StateLessRule {
         this.cClass = cClass;
     }
 
-    @Override public MatchedContent match(Context ctx, States states) {
-    	if (!states.hasNext(ctx)) return null;
+    @Override public MatchedContent match(Context ctx, SingleMatchState state) {
+    	if (state.hasBeenUsed) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
-//    		System.out.println("RuleChar for "+cClass+" is being evaluated with states "+states);
-			//states.next(ctx);
+    		state.hasBeenUsed = true;
 	        if (ctx.is(cClass)) {
 	            char c = ctx.poll(); // poll to consume. needed even when not capturing
 	            return mc = new MatchedContent(capture ? new Leaf("char", c) : null);

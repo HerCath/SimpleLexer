@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import com.sun.org.apache.xerces.internal.impl.xs.SubstitutionGroupHandler;
 
@@ -28,7 +29,7 @@ public class RuleAnd implements Rule {
     		this.posBefore = posBefore;
     		this.posAfter = posAfter;
     	}
-    	public String toString() {
+    	public String _toString() {
     		return "\n\t\tSubRuleMatch: from "+posBefore+" to "+posAfter+", matched "+captured;
     	}
     }
@@ -36,9 +37,9 @@ public class RuleAnd implements Rule {
     private static <T> T getLast(List<T> list) { return list.isEmpty() ? null : list.get(list.size()-1); }
     private static <T> T removeLast(List<T> list) { return list.remove(list.size()-1); }
 
-    private class RuleAndStates extends States {
+    private class RuleAndStates extends State {
     	
-    	List<States> subStates;
+    	List<State> subStates;
     	List<SubRuleMatch> subMatches;
     	
     	RuleAndStates(Context ctx) {
@@ -50,57 +51,46 @@ public class RuleAnd implements Rule {
     	}
     	
     	public String toString() {
-    		return "RuleAndStates{\n\tsubStates="+subStates+",\n\tsubMatches="+subMatches+"}";
+    		return "AND{"+subMatches+", "+subStates+"}";
     	}
     	
 		@Override protected boolean _hasNext(Context ctx) {
-			if (subStates.size()<subRules.size()) return true;
-			SubRuleMatch prevSubRuleMatch = null;
-			final int pos = ctx.pos;
-			try {
-				for (int i=0; i<subRules.size();) {
-					if (prevSubRuleMatch!=null)
-						ctx.pos = prevSubRuleMatch.posAfter;
-					if (subStates.get(i).hasNext(ctx)) return true;
-					prevSubRuleMatch = subMatches.get(i);
-					i++;
-				}
-			} finally {
-				ctx.pos = pos;
-			}
-			return false;
+			return subStates.get(0).hasNext(ctx);
 		}
 
 		@Override protected void _next(Context ctx) {
 			final int pos = ctx.pos;
-				while (hasNext(ctx)) {
-					try {
-						if (subStates.size()==subMatches.size())
-							removeLast(subMatches); // forget about last match if any
-						States lastSubRuleStates = getLast(subStates);
-						SubRuleMatch beforeLastSubRuleMatch = getLast(subMatches);
-						if (beforeLastSubRuleMatch!=null)
-							ctx.pos = beforeLastSubRuleMatch.posAfter; // adjust context because we might try to check the hasNext of a in-the-middle rule, so we want to test this while the context is a the right index
-						if (lastSubRuleStates.hasNext(ctx)) {
-							lastSubRuleStates.next(ctx);
-							return;
-						}
-						removeLast(subStates);
-					} finally {
-						ctx.pos = pos;
+			while (true) {
+				try {
+					if (subStates.size()==subMatches.size())
+						removeLast(subMatches); // forget about last match if any
+					State lastSubRuleStates = getLast(subStates);
+					SubRuleMatch beforeLastSubRuleMatch = getLast(subMatches);
+					if (beforeLastSubRuleMatch!=null)
+						ctx.pos = beforeLastSubRuleMatch.posAfter; // adjust context because we might try to check the hasNext of a in-the-middle rule, so we want to test this while the context is a the right index
+					if (lastSubRuleStates.hasNext(ctx)) {
+						lastSubRuleStates.next(ctx);
+						return;
 					}
+					if (beforeLastSubRuleMatch!=null)
+						removeLast(subStates);
+					else
+						throw new NoSuchElementException();
+				} finally {
+					ctx.pos = pos;
 				}
+			}
 		}
     	
     }
     
     @Override
-    public States createStates(Context ctx) {
+    public State createStates(Context ctx) {
     	return new RuleAndStates(ctx);
     }
 
     @Override
-    public MatchedContent match(Context ctx, States states) {
+    public MatchedContent match(Context ctx, State states) {
     	if (!states.hasNext(ctx)) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
@@ -114,7 +104,7 @@ public class RuleAnd implements Rule {
     				// it it did not matched, we go back to the previous rule and move its state a step further
     				int subRuleIdx = _states.subStates.size()-1;
     				Rule subRule = subRules.get(subRuleIdx);
-    				States subRuleStates = _states.subStates.get(subRuleIdx);
+    				State subRuleStates = _states.subStates.get(subRuleIdx);
     				if (!_states.subMatches.isEmpty()) {
     					ctx.pos = getLast(_states.subMatches).posAfter;
     				}

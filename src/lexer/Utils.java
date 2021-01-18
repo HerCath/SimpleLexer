@@ -19,12 +19,9 @@ public class Utils {
         return new Lexer() {
             @Override public Node parse(CharSequence input) {
                 Context ctx = new Context(input);
-                States states = rule.createStates(ctx);
-                while (states.hasNext(ctx)) {
-                    MatchedContent mc = rule.match(ctx, states);
-                    if (mc != null) return mc.captured;
-				}
-				return null;
+                State states = rule.createState(ctx);
+                MatchedContent mc = rule.match(ctx, states);
+                return mc != null ?  mc.captured : null;
             }
         };
     }
@@ -203,23 +200,19 @@ public class Utils {
 		Rule CD = new RuleString(true, "CD");
 		Rule C_or_D__and__C_or_D = new RuleAnd(C_or_D, C_or_D);
 		Rule CD___or___C_or_D__and__C_or_D = new RuleOr(CD, C_or_D__and__C_or_D);
-//		Context ctx = new Context("CD");
-//		States states = CD___or___C_or_D__and__C_or_D.createStates(ctx);
-//		while (true) {
-//			ctx.pos = 0;
-//			if (states.hasNext(ctx)) {
-//				MatchedContent mc = CD___or___C_or_D__and__C_or_D.match(ctx, states);
-//				System.out.println(mc);
-//				if (mc != null) {
-//					ctx.pos = 0;
-//					states.next(ctx);
-//				}
-//			} else {
-//				break;
-//			}
-//		}
+		Context ctx = new Context("D");
+		Rule tested = new RuleOr(C_or_D, C_or_D);
+		State state = tested.createState(ctx);
+		while (true) {
+			ctx.pos = 0;
+//			System.out.println("States before match is : "+state);
+			MatchedContent mc = tested.match(ctx, state);
+			if (mc == null) break;
+			System.out.println("!!!! ctx.pos="+ctx.pos+" : "+mc.captured);
+		}
+		System.out.println("Out of loop, final state is "+state);
 //		System.out.println(toLexer().parse("DC"));
-//		System.exit(0);
+		System.exit(0);
 //		Context ctx = new Context("D");
 //		States states = C_or_D.createStates(ctx);
 //		int i = 0;
