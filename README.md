@@ -1,6 +1,9 @@
 # SimpleLexer
 A simple lexer engine to write simple syntax recognition grammar patterns to macth complex expressions. It is fully runtime and does not need any code generation that need to be compiled afterward. The first implementation is 100% java and only in java.
 
+# Main difference with other existing solutions
+It does not really rely on tokens even though its output can be considered a token-stream. Its capabilities are more those you can expect from a regex engine. It can match "DDDC" using a grammar like 'D'* 'DC'. Lots of other lexers need more complex expression to hanlde the fact that the 1st token 'D' is a subset of the 2nd token 'DC'. Some lexer can't even hanlde such cases.
+
 # Input/Output
 The `Lexer` input is a `String`. Its output is a tree-like structure.
 
@@ -48,11 +51,13 @@ The lexer entry point is the main rule. So at least one rule must be defined wit
 
 The ruleName may be followed by [], in which case this rule will emit a Branch. It will emit a Leaf otherwise.
 
-The ruleName is case sensitive and must be uniq.
+The ruleName is case sensitive and must be unique.
 
 Rules may be defined in any order.
 
-Inside ruleExpression: char classes, strings and references to another rule may be precedeed by a + to indicate it is captured, otherwise it is discarded. In both cases it must still match.
+Inside ruleExpression: char classes, strings and references to another rule may be preceded by a + to indicate it is captured, otherwise it is discarded. In both cases it must still match.
+
+Nothing is implicit, not even whitespaces.
 
 # Exemples
 the grammar `"main[] = +'a' +'A' ;"` matches `"aA"` and capture `<branch name="main"><leaf name="char" value="a"/><leaf name="char" value="A"/></branch>`
