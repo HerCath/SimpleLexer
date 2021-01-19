@@ -1,8 +1,6 @@
 package lexer.impl;
 
-import java.util.Iterator;
-
-public class RuleRename implements Rule<State> {
+public class RuleRename extends Rule<State> {
 
 	final String name;
 	final Rule subRule;

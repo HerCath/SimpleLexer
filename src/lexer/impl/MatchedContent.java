@@ -37,6 +37,6 @@ public class MatchedContent {
 
 	@Override
 	public String toString() {
-		return "MacthedContext{range=["+from+", "+to+"[, captured=" + (captured != null ? captured.stringValue() : "null") + "}";
+		return "MacthedContext{range=["+from+", "+to+"[, captured=" + (captured != null ? "<"+captured.name+">"+captured.stringValue()+"</"+captured.name+">" : "null") + "}";
 	}
 }

@@ -9,12 +9,12 @@ package lexer.impl;
  * one matches several times but spanning different subset of chars. The impact
  * between each rule is tracked within the provided context when matching.
  */
-public interface Rule<STATE extends State> {
+public abstract class Rule<STATE extends State> {
 	
     /**
      * Creates and returns the states Iterator to use when matching.
      */
-    STATE createState(Context ctx);
+    public abstract STATE createState(Context ctx);
     
     /**
 	 * Returns next preferred match. Returns null once no more matches. Mutate the
@@ -22,5 +22,7 @@ public interface Rule<STATE extends State> {
 	 * generated the next prefered match result (or null if there is no more matches
 	 * possible).
 	 */
-    MatchedContent match(Context ctx, STATE state);
+    public abstract MatchedContent match(Context ctx, STATE state);
+    
+    public boolean debug = false;
 }

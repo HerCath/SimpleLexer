@@ -11,7 +11,7 @@ import lexer.Branch;
 import lexer.Node;
 import lexer.impl.RuleAnd.RuleAndState;
 
-public class RuleAnd implements Rule<RuleAndState> {
+public class RuleAnd extends Rule<RuleAndState> {
 
     final List<Rule> subRules;
 
@@ -91,7 +91,11 @@ public class RuleAnd implements Rule<RuleAndState> {
     					for (MatchedContent subMatch:state.subMatches) {
     						if (subMatch.captured!=null) {
     							if ("*".equals(subMatch.captured.name)) {
-    								match.childs.addAll(((Branch)subMatch.captured).childs);
+    								try {
+    									match.childs.addAll(((Branch)subMatch.captured).childs);
+    								} catch (ClassCastException cce) {
+    									throw new RuntimeException("Got a leaf with a * name: "+subMatch.captured);
+    								}
     							} else {
     								match.childs.add(subMatch.captured);
     							}
@@ -139,7 +143,6 @@ public class RuleAnd implements Rule<RuleAndState> {
     				}
     			}
     		}
-    		System.out.println("RuleAnd has no more states : "+state);
     		ctx.pos = pos;
     		return null;
     	} finally {

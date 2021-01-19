@@ -2,7 +2,7 @@ package lexer.impl;
 
 import lexer.Leaf;
 
-public class RuleString extends Capturable implements SingleMatchRule {
+public class RuleString extends Capturable<SingleMatchState> {
 
     final CharSequence cSeq;
 
@@ -11,12 +11,18 @@ public class RuleString extends Capturable implements SingleMatchRule {
         if (cSeq.length()==0) throw new RuntimeException("A rule that match the empty string is not a legit one.");
         this.cSeq = cSeq;
     }
+    
+    @Override public SingleMatchState createState(Context ctx) {
+        return new SingleMatchState(ctx) {
+        	public String toString() { return "SingleMatchState{hasBeenUsed="+hasBeenUsed+", rule="+RuleString.this+"}"; }
+        };
+    }
 
     @Override public MatchedContent match(Context ctx, SingleMatchState state) {
-    	if (state.hasBeenUsed) return null;
     	MatchedContent mc = null;
     	ctx.enter(this);
     	try {
+    		if (state.hasBeenUsed) return null;
     		state.hasBeenUsed = true;
 	        final int pos = ctx.pos;
 	        int i=0;

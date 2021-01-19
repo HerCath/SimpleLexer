@@ -3,9 +3,11 @@ package lexer.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import lexer.Branch;
 import lexer.impl.RuleOr.RuleOrStates;
 
-public class RuleOr implements Rule<RuleOrStates> {
+public class RuleOr extends Rule<RuleOrStates> {
 
     final List<Rule> subRules;
     
@@ -35,8 +37,18 @@ public class RuleOr implements Rule<RuleOrStates> {
             	if (state.subRuleIdx>=subRules.size()) return null;
             	if (state.subRuleState==null) state.subRuleState = subRules.get(state.subRuleIdx).createState(ctx);
 //            	System.out.println("DEBUG 2 Inside OR loop, state is "+state);
-                mc = subRules.get(state.subRuleIdx).match(ctx, state.subRuleState);
-                if (mc!=null) return mc;
+            	MatchedContent subMatch = subRules.get(state.subRuleIdx).match(ctx, state.subRuleState);
+                if (subMatch!=null) {
+                	Branch b = new Branch("*");
+                	if (subMatch.captured!=null) {
+                		if (subMatch.captured.name.equals("*")) {
+                			b.childs.addAll(((Branch)subMatch.captured).childs);
+                		} else {
+                			b.childs.add(subMatch.captured);
+                		}
+                	}
+                	return mc = new MatchedContent(subMatch.from, b, subMatch.to);
+                }
                 state.subRuleIdx++;
                 state.subRuleState = null;
             }

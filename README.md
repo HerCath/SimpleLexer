@@ -22,22 +22,27 @@ You can have a Lexer using 3 different ways :
 
 # built-in lexer expression language
     WS = ' '||'\t'||'\n'||\'r';
-    main[] = WS* (+rule WS*)* ;
-    rule[] = +ruleName WS* '=' WS* +ruleOr WS* ';' ;
-    ruleName = +LETTER (+LETTER|+DIGIT|+'_')* ;
     LETTER = 'a'..'z'|'A'..'Z' ;
     DIGIT = '0'..'9' ;
+    
+    main[] = WS* (+rule WS*)* ;
+    rule[] = +ruleName WS* '=' WS* +ruleOr WS* ';' ;
+    
+    ruleName = +LETTER (+LETTER|+DIGIT|+'_')* ;
+    
     ruleOr[] = +ruleAnd (WS* '|' WS* +ruleAnd)* ;
     ruleAnd[] = +ruleTerm (WS+ +ruleTerm)* ;
-    ruleTerm[] = +'+'? +capturable | '(' WS* +ruleOr WS* ')';
-    capturable[] = +charClassOr | +string | +ruleRef ;
+    ruleTerm[] = +'+'? (+charClassOr | +string | +ruleRef) | '(' WS* +ruleOr WS* ')';
     ruleRef = +ruleName ;
+    
     charClassOr[] = +charClassAnd ("||" +charClassAnd)* ;
     charClassAnd[] = +charClassNot ("&&" +charClassNot)* ;
     charClassNot[] = +'!'? +charClassTerm ;
-    charClassTerm[] = +char | +char '..' +char | '(' +charClassOr ')' ;
-    char = +<a real char between simple quote> ;
+    charClassTerm[] = +string | +range | +char | '(' +charClassOr ')' ;
+    
     string = '"' ( +!('"'||'\') | '\' +('"'||'\')) '"' ;
+    range[] = +char '..' +char;
+    char = +<a real char between simple quote, use \ to escape simple quote and itself> ;
 
 The lexer entry point is the main rule. So at least one rule must be defined with that name.
 

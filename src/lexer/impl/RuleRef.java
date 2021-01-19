@@ -2,7 +2,7 @@ package lexer.impl;
 
 import java.util.Map;
 
-public class RuleRef extends Capturable implements Rule<State> {
+public class RuleRef extends Capturable<State> {
 
     final String name;
     final Map<String, Rule> rules;
@@ -13,7 +13,12 @@ public class RuleRef extends Capturable implements Rule<State> {
         this.rules = rules;
     }
 
-    @Override public State createState(Context ctx) { return rules.get(name).createState(ctx); }
+    @Override public State createState(Context ctx) {
+    	Rule rule = rules.get(name);
+    	if (rule == null)
+    		throw new RuntimeException("Got a reference to an unknown rule \""+name+"\". TODO : give the closest rule name to help debugging rules.");
+    	return rule.createState(ctx);
+    }
 
     @Override public MatchedContent match(Context ctx, State state) {
     	MatchedContent mc = null;
