@@ -10,9 +10,7 @@ public class Utils {
 
     public static Lexer toLexer(String lexerExpression) {
         Node lexerTree = LEXER_PARSER.parse(lexerExpression);
-        System.out.println("Parsed \""+lexerExpression+"\" as "+lexerTree);
-        // TODO : compile the returned tree into a Lexer using the Rule framework
-        return null;
+        throw new RuntimeException("Compiling parsed lexer grammar expression into a lexer using built-in rule engine is not yet implemented.");
     }
 
     public static Lexer toLexer(Rule rule) {
@@ -146,29 +144,9 @@ public class Utils {
     		new RuleCardinality(1, Integer.MAX_VALUE, false, new RuleAnd(rule, skipSpaces))
     	);
     	LEXER_PARSER = toLexer(main);
-//    	System.exit(0);
     }
 
     public static void main(String...args) throws Throwable {
-    	/*
-        Rule lower = new RuleChar(true, CharClass.fromRange('a', 'z'));
-        Rule upper = new RuleChar(false, CharClass.fromRange('A', 'Z'));
-        Rule letter = new RuleOr(lower, upper);
-        Rule letter_1_to_3 = new RuleCardinality(0, Integer.MAX_VALUE, true, letter);
-        Rule digit = new RuleChar(true, CharClass.fromRange('0', '9'));
-        Rule letter_1_to_3_then_digit = new RuleAnd(letter_1_to_3, digit);
-        Lexer grammar = toLexer(new RuleBranchToLeaf(letter_1_to_3_then_digit));
-        System.out.println(grammar.parse("abCDef3"));
-        System.out.println(grammar.parse("AA"));
-        System.out.println(grammar.parse("a3"));
-        */
-    	
-
-//        Rule upper = new RuleChar(true, CharClass.fromRange('A', 'Z'));
-//        Rule uppers = new RuleCardinality(0, Integer.MAX_VALUE, false, upper);
-//        Rule AB = new RuleString(true, "AB");
-//        Rule main = new RuleAnd(uppers, AB);
-//        System.out.println(toLexer(main).parse("AAAB"));
 		
     	Rule A = new RuleChar(true, CharClass.fromChar('A'));
     	Rule B = new RuleChar(true, CharClass.fromChar('B'));
@@ -176,55 +154,26 @@ public class Utils {
     	Rule D = new RuleChar(true, CharClass.fromChar('D')); 
     	Rule A_or_B = new RuleOr(A, B);
     	Rule C_or_D = new RuleOr(C, D);
+    	Rule C_or_C = new RuleOr(C, C);
+    	Rule C_or_C__and__C_or_C = new RuleAnd(C_or_C, C_or_C);
     	Rule A_and_B = new RuleAnd(A, B);
-		Rule A_or_B__or__C_or_D = new RuleOr(
-			A_or_B,
-			C_or_D
-		);
-//		Context ctx = new Context("D");
-//		States states = D.createStates(ctx);
-//		System.out.println(D.match(ctx, states));
-//		ctx.pos = 0;
-//		System.out.println(D.match(ctx, states));
-//		ctx.pos = 0;
-//		states = C_or_D.createStates(ctx);
-//		while (states.hasNext(ctx)) {
-//			System.out.println("After hasNext, state "+states);
-//			states.next(ctx);
-//			System.out.println("After next, new state is "+states);
-////			MatchedContent mc = C_or_D.match(ctx, states);
-////			System.out.println("It macthed "+mc);
-//		}
-//		System.out.println("Last state is "+states);
-//		System.out.println(toLexer(D).parse("D"));
+		Rule A_or_B__or__C_or_D = new RuleOr(A_or_B, C_or_D );
+		Rule A_or_B__and__C_or_D = new RuleAnd(A_or_B, C_or_D );
 		Rule CD = new RuleString(true, "CD");
 		Rule C_or_D__and__C_or_D = new RuleAnd(C_or_D, C_or_D);
 		Rule CD___or___C_or_D__and__C_or_D = new RuleOr(CD, C_or_D__and__C_or_D);
-		Rule tested = A_and_B;
-		Context ctx = new Context("AB");
+		Rule many_D = new RuleCardinality(0, Integer.MAX_VALUE, false, D);
+		Rule many_D_then_D_then_D = new RuleAnd(many_D, D, D);
+		Rule tested = many_D_then_D_then_D;
+		Context ctx = new Context("DDD");
 		State state = tested.createState(ctx);
 		while (true) {
 			ctx.pos = 0;
-//			System.out.println("States before match is : "+state);
 			MatchedContent mc = tested.match(ctx, state);
 			if (mc == null) break;
+			System.out.println("Inside loop, state is "+state);
 			System.out.println("!!!! ctx.pos="+ctx.pos+" : "+mc.captured);
 		}
 		System.out.println("Out of loop, final state is "+state);
-//		System.out.println(toLexer().parse("DC"));
-		System.exit(0);
-//		Context ctx = new Context("D");
-//		States states = C_or_D.createStates(ctx);
-//		int i = 0;
-//		while (states.hasNext(ctx)) {
-//			System.out.println("states["+(i++)+"] = "+states);
-//			states.next(ctx);
-//		}
-//		System.out.println("states["+(i++)+"] = "+states);
-		System.out.println(toLexer(C_or_D__and__C_or_D).parse("DD"));
-//		System.out.println(toLexer(A_or_B__or__C_or_D).parse("D"));
-
-        //System.out.println("START");
-        //toLexer("r='A';");
     }
 }

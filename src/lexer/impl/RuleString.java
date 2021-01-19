@@ -25,7 +25,7 @@ public class RuleString extends Capturable implements SingleMatchRule {
 	            ctx.pos++;
 	        }
 	        if (i==cSeq.length()) {
-	            return mc=new MatchedContent(capture?new Leaf("string", cSeq):null);
+	            return mc=new MatchedContent(pos, capture?new Leaf("string", cSeq):null, ctx.pos);
 	        }
 	        ctx.pos = pos;
 	        return null;

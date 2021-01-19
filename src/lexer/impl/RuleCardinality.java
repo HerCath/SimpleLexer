@@ -7,25 +7,156 @@ import java.util.List;
 
 import lexer.Branch;
 import lexer.Node;
+import lexer.impl.RuleCardinality.RuleCardinalityState;;
 
-public class RuleCardinality implements Rule {
+public class RuleCardinality implements Rule<RuleCardinalityState> {
 
     public final int min;
     public final int max;
     public final boolean greedy;
     public final Rule subRule;
+    
+    class RuleCardinalityState extends State {
+    	boolean zeroEmitted = false; // the zero cardinality is a special case. Due to the way we handle consumming already emitted result, we have to other meaning of remerbering that we emitted the 0 cardinality matching result except by using this flag
+    	int currMin;
+    	int currMax;
+    	List<State> subStates;
+    	List<MatchedContent> subMatches;
+		@Override
+		public String toString() {
+			return "RuleCardinalityState [zeroEmitted=" + zeroEmitted + ", currMin=" + currMin + ", currMax=" + currMax
+					+ ", subStates=" + subStates + ", subMatches=" + subMatches + "]";
+		}
+		RuleCardinalityState(Context ctx) {
+			super(ctx);
+			currMin = min;
+			currMax = max;
+			int bestSize = max<Integer.MAX_VALUE ? max : 2*(min+1);
+			if (bestSize>100) bestSize=100;
+			subStates = new ArrayList<>(bestSize);
+			subMatches = new ArrayList<>(bestSize);
+		}
+		MatchedContent buildMatchedContent(int pos) {
+			Branch result = new Branch("*");
+			int to = pos;
+			for (MatchedContent subMatch:subMatches) {
+				to = subMatch.to;
+				if (subMatch.captured!=null) {
+					if (subMatch.captured.name.equals("*")) {
+						result.childs.addAll(((Branch)subMatch.captured).childs);
+					} else {
+						result.childs.add(subMatch.captured);
+					}
+				}
+			}
+			return new MatchedContent(pos, result, to);
+		}
+	}
+    
+    private static <T> T getLast(List<T> list) { return list.isEmpty() ? null : list.get(list.size()-1); }
+    private static <T> T removeLast(List<T> list) { return list.isEmpty() ? null : list.remove(list.size()-1); }
 
-    @Override public State createStates(Context ctx) {
-        // TODO : re-implement
-        return null;
+    @Override public RuleCardinalityState createState(Context ctx) {
+        return new RuleCardinalityState(ctx);
     }
 
-    @Override public MatchedContent match(Context ctx, State state) {
-        // TODO : re-implement
-        return null;
+    @Override public MatchedContent match(Context ctx, RuleCardinalityState state) {
+    	MatchedContent mc = null;
+    	ctx.enter(this);
+    	try {
+    		final int pos = ctx.pos;
+    		while (true) {
+    			System.out.println("CARD INNER LOOP: "+state);
+    			if (greedy) {
+    				if (state.subMatches.size()==state.currMin) {
+    					if (state.currMin==0 && !state.zeroEmitted) {
+    						state.currMin++;
+    						state.zeroEmitted = true;
+    						ctx.pos = pos;
+    						return mc=state.buildMatchedContent(pos);
+    					}
+    					throw new RuntimeException("greedy not yet implemented");
+    				} else {
+    					throw new RuntimeException("greedy not yet implemented");
+    				}
+    			} else {
+    				if (state.zeroEmitted) return null;  
+    				
+    				///////////////////////////////////////////////////////////
+    				// not greedy case, we try from max to min               //
+    				///////////////////////////////////////////////////////////
+    				
+    				///////////////////////////////////////////////////////////
+    				// do we have enough sub-matches to emit a result ?      //
+    				///////////////////////////////////////////////////////////
+    				if (state.subMatches.size()==state.currMax) {
+    					
+    					///////////////////////////////////////////////////////
+    					// yes, we have the maximum number of sub matches    //
+    					// possible, so we generate the cardinality match    //
+    					///////////////////////////////////////////////////////
+    					state.zeroEmitted = state.subMatches.isEmpty(); 
+    					mc = state.buildMatchedContent(pos);
+    					ctx.pos = mc.to;
+    					removeLast(state.subMatches); // removing last sub match will firt next match(...) call to generate a different match and not just repeat this one again and again
+    					return mc;
+    				
+    				} else {
+    					///////////////////////////////////////////////////////
+    					// no, we still have some room to try another sub    //
+    					// match                                             //
+    					///////////////////////////////////////////////////////
+    					
+    					MatchedContent lastMatchedContent = getLast(state.subMatches);
+    					if (lastMatchedContent!=null) ctx.pos = lastMatchedContent.to;
+    					
+    					///////////////////////////////////////////////////////
+    					// we have 2 cases here, either we have the same     //
+    					// amout of sub matches than we have sub states, or  //
+    					// we have 1 sub match less than sub states          //
+    					///////////////////////////////////////////////////////
+    					State nextCardState; 
+    					if (state.subMatches.size()==state.subStates.size()) {
+	    					state.subStates.add(nextCardState = subRule.createState(ctx));
+    					} else {
+    						nextCardState = getLast(state.subStates);
+    					}
+    					
+    					///////////////////////////////////////////////////////
+    					// Beyond this line, we have less sub matches than   //
+    					// the expected cardinality and also that we have    //
+    					// exactly 1 more sub-state than sub-match.          //
+    					// We may have as many sub states than the target    //
+    					// cardinality                                       //
+    					///////////////////////////////////////////////////////
+    					MatchedContent nextCardMatch = subRule.match(ctx, nextCardState);
+    					if (nextCardMatch!=null && nextCardMatch.from!=nextCardMatch.to) { // we do not count matches with 0 chars as being real sub-match, otherwise this would generate infinite loop uppon unbounded-max cardinalities 
+    						state.subMatches.add(nextCardMatch);
+    					} else {
+    						// ok, so we have a miss, but maybe the cardinality itself is a match
+    						if (state.subMatches.size()>=state.currMin) {
+    							state.zeroEmitted = state.subMatches.isEmpty();
+    							mc = state.buildMatchedContent(pos);
+    						}
+    						
+    						// we still have to rollback up to the rule just prior to this last
+    						// missed tried one
+    						removeLast(state.subStates);
+    						removeLast(state.subMatches);
+    						if (mc!=null) {
+    							ctx.pos = mc.to;
+    							return mc;
+    						}
+    					}
+    				}
+    			}
+    		}
+    	} finally {
+    		ctx.leave(this, mc);
+    	}
     }
 
-    public RuleCardinality(int min, int max, boolean greedy, Rule subRule) {
+    public RuleCardinality(int min, int max, boolean greedy, Rule<?> subRule) {
         this.min = min;
         this.max = max;
         this.greedy = greedy;

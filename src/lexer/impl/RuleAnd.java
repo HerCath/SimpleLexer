@@ -19,26 +19,13 @@ public class RuleAnd implements Rule<RuleAndState> {
     public RuleAnd(List<Rule> subRules) { this.subRules = subRules; }
     public RuleAnd(Rule...subRules) { this(Arrays.asList(subRules)); }
     
-    static class SubRuleMatch extends MatchedContent {
-    	final int posBefore; // we store the position before it matched so we can roll it back
-    	final int posAfter; // we store the position after is matched so we can simulate the Context state after subRule.match(...) was called
-    	SubRuleMatch(int posBefore, Node captured, int posAfter) {
-    		super(captured);
-    		this.posBefore = posBefore;
-    		this.posAfter = posAfter;
-    	}
-    	public String toString() {
-    		return "Match["+posBefore+".."+posAfter+"]{"+(captured!=null?(captured.name+"="+captured.stringValue()):null)+"}";
-    	}
-    }
-    
     private static <T> T getLast(List<T> list) { return list.isEmpty() ? null : list.get(list.size()-1); }
     private static <T> T removeLast(List<T> list) { return list.isEmpty() ? null : list.remove(list.size()-1); }
 
     class RuleAndState extends State {
     	
     	List<State> subStates;
-    	List<SubRuleMatch> subMatches;
+    	List<MatchedContent> subMatches;
     	
     	RuleAndState(Context ctx) {
     		super(ctx);
@@ -85,8 +72,8 @@ public class RuleAnd implements Rule<RuleAndState> {
     					Rule subRuleToInject = subRules.get(subRuleToInjectIdx);
     					
     					// setup the context are the correct position
-    					SubRuleMatch lastKnownSubMatch = getLast(state.subMatches); 
-    					if (lastKnownSubMatch!=null) ctx.pos = lastKnownSubMatch.posAfter;
+    					MatchedContent lastKnownSubMatch = getLast(state.subMatches); 
+    					if (lastKnownSubMatch!=null) ctx.pos = lastKnownSubMatch.to;
     					
     					// then create the state object for this rule within the correctly adjusted context
     					State subRuleToInjectState = subRuleToInject.createState(ctx);
@@ -101,7 +88,7 @@ public class RuleAnd implements Rule<RuleAndState> {
     					// so next call to AND.macth will generate a new match and not just
     					// repeat it again and again
     					Branch match = new Branch("*");
-    					for (SubRuleMatch subMatch:state.subMatches) {
+    					for (MatchedContent subMatch:state.subMatches) {
     						if (subMatch.captured!=null) {
     							if ("*".equals(subMatch.captured.name)) {
     								match.childs.addAll(((Branch)subMatch.captured).childs);
@@ -111,9 +98,9 @@ public class RuleAnd implements Rule<RuleAndState> {
     						}
     						// else it was a sub-match but discarded sub-result
     					}
-    					SubRuleMatch lastSubMatch = removeLast(state.subMatches);
-    					ctx.pos = lastSubMatch.posAfter;
-    					return mc = new MatchedContent(match);
+    					MatchedContent lastSubMatch = removeLast(state.subMatches);
+    					ctx.pos = lastSubMatch.to;
+    					return mc = new MatchedContent(pos, match, ctx.pos);
     				}
     			} else {
     				///////////////////////////////////////////////////////////
@@ -122,8 +109,8 @@ public class RuleAnd implements Rule<RuleAndState> {
     				///////////////////////////////////////////////////////////
     				
     				// we adjust the context if needed
-    				SubRuleMatch lastKnownSubMatch = getLast(state.subMatches);
-    				final int posBefore = ctx.pos = lastKnownSubMatch!=null ? lastKnownSubMatch.posAfter : pos;
+    				MatchedContent lastKnownSubMatch = getLast(state.subMatches);
+    				final int posBefore = ctx.pos = lastKnownSubMatch!=null ? lastKnownSubMatch.to : pos;
     				
     				// get everyone in place for the big final test
     				Rule subRuleToTry = subRules.get(state.subMatches.size());
@@ -136,7 +123,7 @@ public class RuleAnd implements Rule<RuleAndState> {
     				// if it matches, we just store the match and loop again //
     				///////////////////////////////////////////////////////////
     				if (subMatch!=null) {
-    					state.subMatches.add(new SubRuleMatch(posBefore, subMatch.captured, ctx.pos));
+    					state.subMatches.add(subMatch);
     					continue;
     				}
 

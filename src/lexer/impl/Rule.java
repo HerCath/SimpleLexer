@@ -1,17 +1,26 @@
 package lexer.impl;
 
 /**
- * Rules are stateless piece of logic that try to match some content. The 3
- * methods will be called in that order #1 createInitialState #2 tryToMatch #3
- * nextState, and if true got back to #2
+ * Rules are stateless piece of "matching" logic. The matching processus is
+ * statefull. To be able to do statefull matching using stateless rule, a State
+ * object is required. Such state objects are created on demand by the Rule
+ * itself. Rules impact each other because any 2 consecutive rules starts follow
+ * each other, so the 2nd one will not start from the same location if the 1st
+ * one matches several times but spanning different subset of chars. The impact
+ * between each rule is tracked within the provided context when matching.
  */
 public interface Rule<STATE extends State> {
+	
     /**
      * Creates and returns the states Iterator to use when matching.
      */
     STATE createState(Context ctx);
+    
     /**
-     * Returns next preferred match. Returns null once no more matches.
-     */
+	 * Returns next preferred match. Returns null once no more matches. Mutate the
+	 * state on the fly, leaving it in a state where the next call to match will
+	 * generated the next prefered match result (or null if there is no more matches
+	 * possible).
+	 */
     MatchedContent match(Context ctx, STATE state);
 }

@@ -18,8 +18,9 @@ public class RuleChar extends Capturable implements SingleMatchRule {
     	try {
     		state.hasBeenUsed = true;
 	        if (ctx.is(cClass)) {
+	        	int from = ctx.pos;
 	            char c = ctx.poll(); // poll to consume. needed even when not capturing
-	            return mc = new MatchedContent(capture ? new Leaf("char", c) : null);
+	            return mc = new MatchedContent(from, capture ? new Leaf("char", c) : null, ctx.pos);
 	        }
 	        return null;
     	} finally {
