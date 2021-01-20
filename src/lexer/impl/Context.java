@@ -80,7 +80,7 @@ public class Context {
     }
     public Context(CharSequence cSeq) {
     	this.cSeq = cSeq;
-    	System.setOut(new PrintStream(new OutputStream() {
+    	/*System.setOut(new PrintStream(new OutputStream() {
     		boolean indentNext = true;
 			@Override public void write(int b) throws IOException {
 				if (indentNext) {
@@ -90,7 +90,7 @@ public class Context {
 				STDOUT.write(b);
 				indentNext = (b=='\n');
 			}
-		}));
+		}));*/
     }
     public char peek() { return cSeq.charAt(pos); }
     public char poll() { return cSeq.charAt(pos++); }

@@ -20,6 +20,6 @@ public class Leaf extends Node {
 
     @Override
     void stringValue(StringBuilder sb) {
-        sb.append(value);
+        if (value != null) sb.append(value);
     }
 }

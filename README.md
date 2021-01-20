@@ -37,15 +37,15 @@ You can have a Lexer using 3 different ways :
     
     ruleOr[] = +ruleAnd (WS* '|' WS* +ruleAnd)* ;
     ruleAnd[] = +ruleTerm (WS+ +ruleTerm)* ;
-    ruleTerm[] = (+'+'? (+string | +charClassOr | +ruleName) | '(' WS* +ruleOr WS* ')') +cardinality;
+    ruleTerm[] = (+'+'? (+string | +charClassOr | +ruleName) | '(' WS* +ruleOr WS* ')') +cardinality?;
     
     cardinality[] = (+'?' | +'*' | +'+' | '{' WS* +integer WS* ',' +integer? WS* '}') +'?'?;
     
-    charClassOr[] = +charClassAnd ('||' +charClassAnd)* ;
-    charClassAnd[] = +charClassNot ('&&' +charClassNot)* ;
+    charClassOr[] = +charClassAnd (WS* '||' WS* +charClassAnd)* ;
+    charClassAnd[] = +charClassNot (WS* '&&' WS* +charClassNot)* ;
     charClassNot[] = +'!'? (+range | +char | '(' +charClassOr ')') ;
     
-    string = '\'' ( +!('\\'||'\'') | '\\' +'\\'||'\'' ) '\'' ;
+    string = '\'' ( +!('\\'||'\'') | '\\' +'\\'||'\'' )+ '\'' ;
     range[] = +char '..' +char ;
     char = +<a real char between ', use \ to escape ' and \> ;
 
