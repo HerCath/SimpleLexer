@@ -21,7 +21,7 @@ public class Context {
 		
 	}
 	
-    final CharSequence cSeq;
+    public final CharSequence cSeq;
     public boolean debug = false;
     public int pos;
     Stack<ParserStack> stack = new Stack<>();
@@ -92,11 +92,9 @@ public class Context {
 			}
 		}));
     }
-    int remaining() { return cSeq.length()-pos; }
-    char peek() { return cSeq.charAt(pos); }
-    char poll() { return cSeq.charAt(pos++); }
-    void skip(CharClass cClass) { while (is(cClass)) pos++; }
-	boolean is(char c) { return !atEnd() && peek()==c; }
-    boolean is(CharClass cClass) { return !atEnd() && cClass.contains(peek()); }
-    boolean atEnd() { return pos>=cSeq.length(); }
+    public char peek() { return cSeq.charAt(pos); }
+    public char poll() { return cSeq.charAt(pos++); }
+	public boolean is(char c) { return !atEnd() && peek()==c; }
+    public boolean is(CharClass cClass) { return !atEnd() && cClass.contains(peek()); }
+    public boolean atEnd() { return pos>=cSeq.length(); }
 }

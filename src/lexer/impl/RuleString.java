@@ -40,6 +40,6 @@ public class RuleString extends Capturable<SingleMatchState> {
     	}
     }
     
-    @Override public String toString() { return "\""+cSeq+"\""; }
+    @Override public String toString() { return "'"+cSeq+"'"; }
     
 }

@@ -13,6 +13,7 @@ public class Utils {
     public static Lexer toLexer(String lexerExpression) {
         Branch rules = (Branch) LEXER_PARSER.parse(lexerExpression);
         Map<String,Rule> ruleRefsMap = new HashMap<>();
+        ruleRefsMap.put("WS", new RuleChar(false, Character::isWhitespace));
         for (Node rule:rules.childs) {
         	Branch _rule = (Branch) rule;
         	String ruleName = _rule.childs.get(0).stringValue();
@@ -29,6 +30,7 @@ public class Utils {
         	if (asLeaf)
         		ruleImpl = new RuleBranchToLeaf(ruleImpl);
         	ruleRefsMap.put(ruleName, new RuleRename(ruleName, ruleImpl));
+        	System.out.println(ruleName+(asLeaf?"":"[]")+" = "+ruleImpl+";");
         }
         Rule main = ruleRefsMap.get("main");
         if (main==null)
@@ -83,26 +85,86 @@ public class Utils {
     	if (ruleNode.name.equals("ruleTerm")) {
     		Branch b = (Branch) ruleNode;
     		Node c = b.childs.get(0);
+    		Rule rule;
     		if (c.name.equals("ruleOr")) {
     			if (b.childs.size()!=1) throw new RuntimeException("Bad ruleTerm node, it has more than 1 child while the 1st one is a ruleOr. node is: "+ruleNode);
-    			return compile(ruleRefsMap, c);
+    			rule = compile(ruleRefsMap, c);
     		} else {
     			// this is a capturable content, next node is either a string, a range, a char or a ref to another rule
     			boolean capture = false;;
-    			if (b.childs.size()==2) {
+    			if (c.name.equals("char")) {
     				capture = true;
     				c = b.childs.get(1);
     			}
     			if (c.name.equals("string")) {
     				Leaf l = (Leaf) c;
-    				return new RuleString(capture, (String)l.value);
+    				rule = new RuleString(capture, (String)l.value);
     			} else if (c.name.equals("charClassOr")) {
-    				return new RuleChar(capture, compile(c));
+    				rule = new RuleChar(capture, compile(c));
     			} else if (c.name.equals("ruleName")) {
     				Leaf l = (Leaf) c;
-    				return new RuleRef(capture, (String)l.value, ruleRefsMap);
+    				rule = new RuleRef(capture, (String)l.value, ruleRefsMap);
+    			} else {
+    				throw new RuntimeException("Could not compiled node "+ruleNode);
     			}
     		}
+    		c = b.childs.get(b.childs.size()-1);
+			if (c.name.equals("cardinality")) {
+				Branch cardinality = (Branch) c;
+				c = cardinality.childs.get(0);
+				int min, max;
+				boolean greedy;
+				if (c.name.equals("char")) {
+					// this is a cardinality expressed using one of the 3 well-known macros ?, + or *
+					String wellKnownCardSymbol = c.stringValue();
+					if ("?".equals(wellKnownCardSymbol)) {
+						min = 0;
+						max = 1;
+					} else if ("+".equals(wellKnownCardSymbol)) {
+						min = 1;
+						max = Integer.MAX_VALUE;
+					} else if ("*".equals(wellKnownCardSymbol)) {
+						min = 0;
+						max = Integer.MAX_VALUE;
+					} else {
+						throw new RuntimeException("Got a cardinality node with a strange content: "+cardinality);
+					}
+					if (cardinality.childs.size()==1) {
+						greedy = false;
+					} else if (cardinality.childs.size()==2) {
+						c = cardinality.childs.get(1);
+						System.out.println("Going to deduce greedy using "+c);
+						if (c.name.equals("char") && c.stringValue().equals("?")) {
+							greedy = true;
+						} else {
+    						throw new RuntimeException("Got a cardinality node with a strange content: "+cardinality);
+						}
+					} else {
+						throw new RuntimeException("Got a cardinality node with a strange content: "+cardinality);
+					}
+				} else if (c.name.equals("integer")) {
+					min = Integer.parseInt(c.stringValue());
+					if (cardinality.childs.size()>1) {
+						c = cardinality.childs.get(1);
+						if (c.name.equals("integer")) {
+							max = Integer.parseInt(c.stringValue());
+							if (cardinality.childs.size()>2) {
+								c = cardinality.childs.get(2);
+							}
+						} else {
+							max = Integer.MAX_VALUE;
+						}
+						greedy = c.name.equals("char");
+					} else {
+						max = Integer.MAX_VALUE;
+						greedy = false;
+					}
+				} else {
+					throw new RuntimeException("Got a cardinality node with a strange content: "+cardinality);
+				}
+				rule = new RuleCardinality(min, max, greedy, rule);
+			}
+			return rule;
     	}
     	if (ruleNode.name.equals("ruleAnd")) {
     		Branch b = (Branch) ruleNode;
@@ -130,8 +192,16 @@ public class Utils {
             @Override public Node parse(CharSequence input) {
                 Context ctx = new Context(input);
                 State states = rule.createState(ctx);
-                MatchedContent mc = rule.match(ctx, states);
-                return mc != null ?  mc.captured : null;
+                while (true) {
+	                MatchedContent mc = rule.match(ctx, states);
+	                if (mc != null) {
+	                	if (ctx.atEnd())
+	                		return mc.captured;
+	                	ctx.pos = 0;
+	                } else {
+	                	return null;
+	                }
+                }
             }
         };
     }
@@ -167,7 +237,6 @@ public class Utils {
     	));
     	Rule ruleName = new RuleRename("ruleName", pattern_ruleName);
     	/*final Map<String,Rule>*/ ruleRefsMap = new HashMap<>();
-//    	Rule ruleRef = new RuleRename("ruleRef", pattern_ruleName);
     	Rule ruleOrRef = new RuleRef(true, "ruleOr", ruleRefsMap);
     	Rule ruleStringRef = new RuleRef(true, "string", ruleRefsMap);
     	Rule unescapedChar = new RuleOr(
@@ -234,23 +303,46 @@ public class Utils {
    				charClassAndRef
     		))
     	);
-    	Rule ruleTerm = new RuleOr(
-    		new RuleAnd(
-				new RuleCardinality(0, 1, false, new RuleChar(true, CharClass.fromChar('+'))),
-				new RuleOr(
-					ruleStringRef,
-		    		charClassOrRef,
-		    		new RuleRef(true, "ruleName", ruleRefsMap)
-		    	)
-			),
-    		new RuleAnd(
-    			LP,
-    			skipSpaces,
-    			ruleOrRef,
-    			skipSpaces,
-    			RP
-    		)
-    	);// TODO : adds cardinality parsing
+    	Rule ruleTerm = new RuleAnd( 
+	    	new RuleOr(
+	    		new RuleAnd(
+					new RuleCardinality(0, 1, false, new RuleChar(true, CharClass.fromChar('+'))),
+					new RuleOr(
+						ruleStringRef,
+			    		charClassOrRef,
+			    		new RuleRef(true, "ruleName", ruleRefsMap)
+			    	)
+				),
+	    		new RuleAnd(
+	    			LP,
+	    			skipSpaces,
+	    			ruleOrRef,
+	    			skipSpaces,
+	    			RP
+	    		)
+	    	),
+	    	new RuleCardinality(0, 1, false, new RuleRef(true, "cardinality", ruleRefsMap))
+    	);
+    	Rule integer = new RuleBranchToLeaf(new RuleCardinality(1, Integer.MAX_VALUE, false, new RuleRef(true, "DIGIT", ruleRefsMap)));
+    	Rule cardinality = new RuleAnd(
+    		new RuleOr(
+				new RuleChar(true, CharClass.fromChar('?')),
+				new RuleChar(true, CharClass.fromChar('*')),
+				new RuleChar(true, CharClass.fromChar('+')),
+				new RuleAnd(
+					new RuleChar(false, CharClass.fromChar('{')),
+					skipSpaces,
+					new RuleRef(true, "integer", ruleRefsMap),
+					skipSpaces,
+					new RuleChar(false, CharClass.fromChar(',')),
+					skipSpaces,
+					new RuleCardinality(0, 1, false, new RuleRef(true, "integer", ruleRefsMap)),
+					skipSpaces,
+					new RuleChar(false, CharClass.fromChar('}'))
+				)
+    		),
+    		new RuleCardinality(0, 1, false, new RuleChar(true, CharClass.fromChar('?')))
+    	);
     	Rule ruleTermRef = new RuleRef(true, "ruleTerm", ruleRefsMap);
     	Rule ruleAnd = new RuleAnd(
 			ruleTermRef,
@@ -269,10 +361,9 @@ public class Utils {
    	    		ruleAndRef
     		))
     	);
-    	Rule asBranch = new RuleAnd( LB, skipSpaces, RB );
+    	Rule asBranch = new RuleString(true, "[]");
     	Rule rule = new RuleAnd(
     		ruleName,
-    		skipSpaces,
     		new RuleCardinality(0, 1, false, new RuleRef(true, "asBranch", ruleRefsMap)),
     		skipSpaces,
     		EQ,
@@ -285,31 +376,35 @@ public class Utils {
 			skipSpaces,
 			new RuleCardinality(1, Integer.MAX_VALUE, false, new RuleAnd(new RuleRef(true, "rule", ruleRefsMap), skipSpaces))
 		);
+    	ruleRefsMap.put("WS", new RuleRename("WS", new RuleChar(false, _ws)));
+    	ruleRefsMap.put("LETTER", new RuleRename("LETTER", new RuleChar(true, _letter)));
+    	ruleRefsMap.put("DIGIT", new RuleRename("DIGIT", new RuleChar(true, _digit)));
+    	ruleRefsMap.put("integer", new RuleRename("integer", integer));
+    	ruleRefsMap.put("main", new RuleRename("main", main));
     	ruleRefsMap.put("rule", new RuleRename("rule", rule));
     	ruleRefsMap.put("ruleName", new RuleRename("ruleName", ruleName));
+    	ruleRefsMap.put("asBranch", new RuleRename("asBranch", asBranch));
     	ruleRefsMap.put("ruleOr", new RuleRename("ruleOr", ruleOr));
     	ruleRefsMap.put("ruleAnd", new RuleRename("ruleAnd", ruleAnd));
     	ruleRefsMap.put("ruleTerm", new RuleRename("ruleTerm", ruleTerm));
-    	ruleRefsMap.put("asBranch", new RuleRename("asBranch", asBranch));
+    	ruleRefsMap.put("cardinality", new RuleRename("cardinality", cardinality));
     	ruleRefsMap.put("charClassOr", new RuleRename("charClassOr", charClassOr));
     	ruleRefsMap.put("charClassAnd", new RuleRename("charClassAnd", charClassAnd));
     	ruleRefsMap.put("charClassNot", new RuleRename("charClassNot", charClassNot));
     	ruleRefsMap.put("string", new RuleRename("string", ruleString));
-    	ruleRefsMap.put("char", new RuleRename("char", charClassChar));
     	ruleRefsMap.put("range", new RuleRename("range", charClassRange));
-    	ruleRefsMap.put("main", new RuleRename("main", main));
+    	ruleRefsMap.put("char", new RuleRename("char", charClassChar));
     	LEXER_PARSER = toLexer(main);
     }
 
     public static void main(String...args) throws Throwable {
-    	String grammar = "main[] = +toto toto; toto = +'a'||'A';";
+    	String grammar = "main[] = +toto{0,10}?; toto = +'a';"; // TODO : even if toto does not capture, it can be captured
     	System.out.println(grammar);
     	System.out.println("==================================");
     	Node asNode = LEXER_PARSER.parse(grammar);
     	System.out.println(asNode);
     	System.out.println("==================================");
-    	System.out.println(toLexer(grammar).parse("aA"));
-    	
+    	System.out.println(toLexer(grammar).parse("aa"));
     	System.exit(0);
     	
     	Rule A = new RuleChar(true, CharClass.fromChar('A'));
@@ -326,12 +421,13 @@ public class Utils {
 		Rule CD = new RuleString(true, "CD");
 		Rule C_or_D__and__C_or_D = new RuleAnd(C_or_D, C_or_D);
 		Rule CD___or___C_or_D__and__C_or_D = new RuleOr(CD, C_or_D__and__C_or_D);
-		Rule many_D = new RuleCardinality(0, 1, true, D);
-		Rule many_D_then_D_then_D = new RuleAnd(many_D, D, D);
-		Rule tested = ruleRefsMap.get("main");
-		String input = "main = +'A' | +'AA' | +'A'..'A' | +anotherRule | ( +'C' );";
+		Rule many_D_not_greedy = new RuleCardinality(0, Integer.MAX_VALUE, false, D);
+		Rule many_D_greedy = new RuleCardinality(0, Integer.MAX_VALUE, true, D);
+		Rule many_D_then_D_then_D = new RuleAnd(many_D_greedy, C);
+		Rule tested = many_D_then_D_then_D;
+		String input = "DDDC";
 //		tested.debug = true;
-		boolean fullTest = false;
+		boolean fullTest = true;
 		if (fullTest) {
 			Context ctx = new Context(input);
 			State state = tested.createState(ctx);

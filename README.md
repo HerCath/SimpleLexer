@@ -25,24 +25,27 @@ You can have a Lexer using 3 different ways :
 
 # built-in lexer expression language
     WS = ' '||'\t'||'\n'||\'r';
-    LETTER = 'a'..'z'||'A'..'Z' ;
-    DIGIT = '0'..'9' ;
+    LETTER = +'a'..'z'||'A'..'Z' ;
+    DIGIT = +'0'..'9' ;
+    integer = +DIGIT+;
     
     main[] = WS* (+rule WS*)* ;
-    rule[] = +ruleName WS* +asBranch? WS* '=' WS* +ruleOr WS* ';' ;
+    rule[] = +ruleName +asBranch? WS* '=' WS* +ruleOr WS* ';' ;
     
     ruleName = +LETTER (+LETTER|+DIGIT|+'_')* ;
-    asBranch = '[' WS* ']';
+    asBranch = '[]';
     
     ruleOr[] = +ruleAnd (WS* '|' WS* +ruleAnd)* ;
     ruleAnd[] = +ruleTerm (WS+ +ruleTerm)* ;
-    ruleTerm[] = +'+'? (+charClassOr | +string | +ruleName) | '(' WS* +ruleOr WS* ')';
+    ruleTerm[] = (+'+'? (+string | +charClassOr | +ruleName) | '(' WS* +ruleOr WS* ')') +cardinality;
     
-    charClassOr[] = +charClassAnd ("||" +charClassAnd)* ;
-    charClassAnd[] = +charClassNot ("&&" +charClassNot)* ;
-    charClassNot[] = +'!'? (+string | +range | +char | '(' +charClassOr ')') ;
+    cardinality[] = (+'?' | +'*' | +'+' | '{' WS* +integer WS* ',' +integer? WS* '}') +'?'?;
     
-    string = '\'' ( +!('\\'||'\'') | '\\' +('\\'||'\'')) '\'' ;
+    charClassOr[] = +charClassAnd ('||' +charClassAnd)* ;
+    charClassAnd[] = +charClassNot ('&&' +charClassNot)* ;
+    charClassNot[] = +'!'? (+range | +char | '(' +charClassOr ')') ;
+    
+    string = '\'' ( +!('\\'||'\'') | '\\' +'\\'||'\'' ) '\'' ;
     range[] = +char '..' +char ;
     char = +<a real char between ', use \ to escape ' and \> ;
 
