@@ -8,6 +8,7 @@ public class RuleChar extends Capturable<SingleMatchState> {
 
     public RuleChar(boolean capture, CharClass cClass) {
         super(capture);
+        if (cClass == null) throw new NullPointerException("Cannot create a rule based on a null CharClass.");
         this.cClass = cClass;
     }
     
@@ -26,7 +27,7 @@ public class RuleChar extends Capturable<SingleMatchState> {
 	        if (ctx.is(cClass)) {
 	        	int from = ctx.pos;
 	            char c = ctx.poll(); // poll to consume. needed even when not capturing
-	            return mc = new MatchedContent(from, capture ? new Leaf("char", c) : null, ctx.pos);
+	            return mc = new MatchedContent(from, capture ? new Leaf("char", new String(new char[] {c})) : null, ctx.pos);
 	        }
 	        return null;
     	} finally {

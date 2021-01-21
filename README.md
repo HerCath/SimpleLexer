@@ -12,48 +12,60 @@ TODO : make some antlr bridge by wrapping the returned tree into a token stream 
 # The API
 For most user, you will just need to use a very small API (4 classes) :
 * tree-like structure, 3 classes:
-  * `Node` is the root class with a `name` field.
-  * `Leaf` is a `Node` with and additional `value` field
-  * `Branch` is a `Node` with and additional `childs` field to store ordered 0 to many `Node`
+    * `Node` is the root class with a `name` field.
+    * `Leaf` is a `Node` with and additional `value` field
+    * `Branch` is a `Node` with and additional `childs` field to store ordered 0 to many `Node`
 * `Lexer` : has a single function `parse` which get a `String` and return a `Node` or `null` when it does not match.
 
 # Create a Lexer
 You can have a Lexer using 3 different ways :
-  1. the easy way : using the built-in simple lexer expression language from a String, just use the Utils helper to have it compiled 
-  2. the hard way : using the built-in implemented Lexer rule blocks, instanciate and connect them
-  3. the hardest way : create one yourself by hand with code
+1. the easy way : using the built-in simple lexer expression language from a String, just use the Utils helper to have it compiled 
+2. the hard way : using the built-in implemented Lexer rule blocks, instanciate and connect them
+3. the hardest way : create one yourself by hand with code
 
 # built-in lexer expression language
-    WS = ' '||'\t'||'\n'||\'r';
-    LETTER = +'a'..'z'||'A'..'Z' ;
-    DIGIT = +'0'..'9' ;
+    LETTER = 'a'..'z'||'A'..'Z';
+    DIGIT = '0'..'9';
+    HEXA = DIGIT||'a'..'f'||'A'..'F';
+    SQ = '\'';
+    BS = '\\';
+    SQ_or_BS = SQ||BS;
+    
     integer = +DIGIT+;
     
-    main[] = WS* (+rule WS*)* ;
+    main[] = WS* ((+charClass | +rule) WS*)+ ;
+    charClass[] = +charClassName WS* '=' WS* +charClassOr WS* ';' ;
     rule[] = +ruleName +asBranch? WS* '=' WS* +ruleOr WS* ';' ;
     
-    ruleName = +LETTER (+LETTER|+DIGIT|+'_')* ;
-    asBranch = '[]';
+    anyName = +LETTER +LETTER||DIGIT||'_'* ;
+    charClassName = +anyName;
+    ruleName = +anyName;
+    asBranch = '[]' ;
     
     ruleOr[] = +ruleAnd (WS* '|' WS* +ruleAnd)* ;
     ruleAnd[] = +ruleTerm (WS+ +ruleTerm)* ;
-    ruleTerm[] = (+'+'? (+string | +charClassOr | +ruleName) | '(' WS* +ruleOr WS* ')') +cardinality?;
+    ruleTerm[] = (+capture? (+string | +anyName | +charClassOr) | '(' WS* +ruleOr WS* ')' ) +cardinality? ;
     
-    cardinality[] = (+'?' | +'*' | +'+' | '{' WS* +integer WS* ',' +integer? WS* '}') +'?'?;
+    capture = '+';
+    
+    cardinality[] = (+'?'||'+'||'*' | '{' WS* +integer WS* ',' WS* +integer? WS* '}' ) +'?'? ;
     
     charClassOr[] = +charClassAnd (WS* '||' WS* +charClassAnd)* ;
     charClassAnd[] = +charClassNot (WS* '&&' WS* +charClassNot)* ;
-    charClassNot[] = +'!'? (+range | +char | '(' +charClassOr ')') ;
+    charClassNot[] = +not? (+range | +char | +charClassName | '(' WS* +charClassOr WS* ')') ;
     
-    string = '\'' ( +!('\\'||'\'') | '\\' +'\\'||'\'' )+ '\'' ;
-    range[] = +char '..' +char ;
-    char = +<a real char between ', use \ to escape ' and \> ;
+    not = '!';
+    
+    innerChar = +!SQ_or_BS | +'\\' +SQ_or_BS | +'\\u' +HEXA{4,4};
+    char = SQ +innerChar SQ;
+    string = SQ +innerChar* SQ;
+    range[] = +char '..' +char;
 
 The lexer entry point is the main rule. So at least one rule must be defined with that name.
 
 The ruleName may be followed by [], in which case this rule will emit a Branch. It will emit a Leaf otherwise.
 
-The ruleName is case sensitive and must be unique.
+The ruleName is case sensitive and must be unique. If the same rule is defined several times, the last definition will be used. This can be used to load different concatenated grammars, using the last one to override some key definition, allowing you to almost achieve some kind of inheritance like in object oriented programming.
 
 Rules may be defined in any order.
 

@@ -21,6 +21,8 @@ public class RuleRename extends Rule<State> {
 			mc = subRule.match(ctx, state);
 			if (mc != null && mc.captured!=null) mc.captured.name = name;
 			return mc;
+    	} catch (RuntimeException re) {
+    		throw new RuntimeException("Failed with sub rule to be renamed to \""+name+"\".", re);
     	} finally {
     		ctx.leave(this, mc);
     	}

@@ -8,7 +8,6 @@ public class RuleString extends Capturable<SingleMatchState> {
 
     public RuleString(boolean capture, CharSequence cSeq) {
         super(capture);
-        if (cSeq.length()==0) throw new RuntimeException("A rule that match the empty string is not a legit one.");
         this.cSeq = cSeq;
     }
     

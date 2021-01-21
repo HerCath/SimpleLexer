@@ -2,9 +2,9 @@ package lexer;
 
 public class Leaf extends Node {
 
-    public Object value;
+    public CharSequence value;
 
-    public Leaf(String name, Object value) {
+    public Leaf(String name, CharSequence value) {
         super(name);
         this.value = value;
     }
