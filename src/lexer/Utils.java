@@ -12,6 +12,23 @@ import lexer.impl.*;
 
 public class Utils {
 
+	/**
+	 * Used to determine rules that only reference something else. Needed to
+	 * known if the referenced entry is a char class or not. We need this to
+	 * determine if we are compiling a char class of a rule.
+	 */	
+	private static String oneOneRefTo(Branch charClassOr) {
+		if (charClassOr.childs.size()!=1) return null;
+		Branch charClassAnd = (Branch) charClassOr.childs.get(0);
+		if (charClassAnd.childs.size()!=1) return null;
+		Branch charClassNot = (Branch) charClassAnd.childs.get(0);
+		if (charClassNot.childs.size()!=1) return null;
+		if (charClassNot.childs.get(0).name.equals("charClassName")) {
+			return charClassNot.childs.get(0).stringValue();
+		}
+		return null;
+	}
+
 	private static Lexer toLexer(Node lexerNode) {
 		Branch rules = (Branch) lexerNode;
 		// we need to go through the rules 2 times
@@ -20,41 +37,103 @@ public class Utils {
 		// we do this because rules may refers either charClass or othre rules by name
 		// and the only way to know if a name is a rule or a charClass is to know all the charClass
 		// charClass can be compiled alone because when a charClass refers a name, this is another charClass and not a rule
-		
-		// 1st round : get the charClasses
 		Map<String,CharClass> charClassesMap = new HashMap<>();
-		charClassesMap.put("WS", Character::isWhitespace);
+		Map<String,Rule> rulesMap = new HashMap<>();
+
+		// contains name or things we don't know if they are rule or charClass and the name they refer to
+		// we will use the target referred name to determine if rule of charClass
+		Map<String, String> ruleOrCharClassSet = new HashMap<>();
+		
+		// we force the rule definition to be compiled has a rule
+		charClassesMap.remove("main");
+		rulesMap.put("main", null);
+
+		// detection loop, we try to figure out who is for sure a charClass and who is for sure a rule
+		// keeping track of those we can't figure it out asap
 		for (Node ruleOrCharClass:rules.childs) {
 			Branch b = (Branch) ruleOrCharClass;
-			String name = b.childs.get(0).stringValue();
-			if (b.childs.size()==2 && b.childs.get(1).name.equals("charClassOr")) {
+			Node nameNode;
+			if (b.childs.get(0).name.equals("debug"))
+				nameNode = b.childs.get(1);
+			else
+				nameNode = b.childs.get(0);
+			String name = nameNode.stringValue();
+			if (name.equals("main")) continue;
+			if (nameNode.name.equals("ruleName")) {
+			//if (b.childs.size()!=2 || !b.childs.get(1).name.equals("charClassOr")) {
+				rulesMap.put(name, null); // we know for sure this is a rule
+			} else {
+				String oneOneRefTo = oneOneRefTo((Branch)b.childs.get(1));
+				if (oneOneRefTo==null) {
+					charClassesMap.put(name, null); // we know for sure this is a charClass
+				} else {
+					ruleOrCharClassSet.put(name, oneOneRefTo);
+				}
+			}
+		}
+		while (ruleOrCharClassSet.size()>0) {
+			Iterator<Map.Entry<String, String>> i = ruleOrCharClassSet.entrySet().iterator();
+			while (i.hasNext()) {
+				Map.Entry<String, String> e = i.next();
+				String target = e.getValue();
+				if (charClassesMap.containsKey(target)) {
+					charClassesMap.put(e.getKey(), null);
+					i.remove();
+					continue;
+				}
+				if (rulesMap.containsKey(target)) {
+					rulesMap.put(e.getKey(), null);
+					i.remove();
+					continue;
+				}
+				// will be resolved during a later loop
+			}
+		}
+		
+		// 1st round : get the charClasses
+		for (Node ruleOrCharClass:rules.childs) {
+			Branch b = (Branch) ruleOrCharClass;
+			Node nameNode;
+			if (b.childs.get(0).name.equals("debug"))
+				nameNode = b.childs.get(1);
+			else
+				nameNode = b.childs.get(0);
+			String name = nameNode.stringValue();
+			if (charClassesMap.containsKey(name)) {
 				CharClass charClass = compile(b.childs.get(1), charClassesMap);
 				charClassesMap.put(name, charClass);
 			}
 		}
 		
-		// 2nd round ; get the rules
-		Map<String,Rule> rulesMap = new HashMap<>();
-		rulesMap.put("WS", new RuleChar(false, charClassesMap.get("WS")));
+		// 2nd round : get the rules
 		for (Node ruleOrCharClass:rules.childs) {
 			Branch b = (Branch) ruleOrCharClass;
-			String name = b.childs.get(0).stringValue();
-			if (b.childs.size()!=2 || ! b.childs.get(1).name.equals("charClassOr")) {
+			boolean debug = false;
+			int offset = 0;
+			Node nameNode;
+			if (b.childs.get(0).name.equals("debug")) {
+				debug = true;
+				offset = 1;
+				nameNode = b.childs.get(1);
+			} else {
+				nameNode = b.childs.get(0);
+			}
+			String name = nameNode.stringValue();
+			if (rulesMap.containsKey(name)) {
 				boolean asLeaf;
-				Node ruleNode;
-				if (b.childs.size()==3) {
+				Node ruleNode = b.childs.get(offset+1);
+				if (ruleNode.name.equals("asBranch")) {
 					asLeaf = false;
-					ruleNode = b.childs.get(2);
+					ruleNode = b.childs.get(offset+2);
 				} else {
 					asLeaf = true;
-					ruleNode = b.childs.get(1);
 				}
 				Rule ruleImpl = new RuleRename(name, compile(rulesMap, charClassesMap, ruleNode));
 				if (asLeaf)
 					ruleImpl = new RuleBranchToLeaf(ruleImpl);
 				rulesMap.put(name, ruleImpl);
+				ruleImpl.debug = debug;
 			}
-//			System.out.println(ruleName+(asLeaf?"":"[]")+" = "+ruleImpl+";");
 		}
 		Rule main = rulesMap.get("main");
 		if (main==null)
@@ -243,7 +322,29 @@ public class Utils {
     			subRules.add(compile(rulesMap, charClassesMap, child));
     		}
     		return new RuleOr(subRules);
-    	}
+		}
+		if (ruleNode.name.equals("charClassOr")) {
+			// special case for verey very simple rules that only refer to a name, like an alias
+			// for those cases, the grammar emit a charClassOr and not a ruleName
+			String target = oneOneRefTo((Branch)ruleNode);
+			CharClass cClass = null;
+			if (target!=null) {
+				cClass = charClassesMap.get(target);
+				if (cClass == null)
+					// capture is false because the + flag to capture being not legit 
+					// within a charClass expression, we can't have a charClassOr 
+					// node to compile with the capture flag. We would had a ruleTerm
+					// if the cpture flag was set
+					return new RuleRef(false, target, rulesMap);
+			} else {
+				// this is a really charClass expression and this happen when compiling 
+				// a rule. The only scenario when this could happen is when compiling 
+				// the main rule when it is only a charClass.
+				cClass = compile(ruleNode, charClassesMap);
+			}
+			// again, capture is false
+			return new RuleChar(false, cClass);
+		}
     	throw new RuntimeException("Do not know how to compile node named "+ruleNode.name+". Full node is "+ruleNode);
     }
 
@@ -299,7 +400,7 @@ public class Utils {
     	throw new RuntimeException("Got a char that should be interpreted has being an hexadecimal value but it is '"+c+"'");
     }
     
-    private static final Lexer LEXER_PARSER;
+    static final Lexer LEXER_PARSER;
     static {
     	
     	final Map<String,Rule> rules = new HashMap<>();
@@ -340,7 +441,8 @@ public class Utils {
     		_digit,
     		CharClass.fromRange('a', 'z'),
     		CharClass.fromRange('A', 'Z')
-    	);
+		);
+		Rule debug = new RuleChar(true, CharClass.fromChar('?'));
     	Rule innerChar = new RuleOr(
 			new RuleChar(true, CharClass.negate(
 				CharClass.or(
@@ -482,6 +584,7 @@ public class Utils {
 	    		SM
 	    	),
     		new RuleAnd(
+				new RuleCardinality(0, 1, false, new RuleRef(true, "debug", rules)),
 	    		new RuleRef(true, "ruleName", rules),
 	    		new RuleCardinality(0, 1, false, new RuleRef(true, "asBranch", rules)),
 	    		skipSpaces,
@@ -501,7 +604,8 @@ public class Utils {
     	rules.put("DIGIT", new RuleRename("DIGIT", new RuleChar(true, _digit)));
     	rules.put("integer", new RuleRename("integer", integer));
     	rules.put("main", new RuleRename("main", main));
-    	rules.put("rule", new RuleRename("rule", rule));
+		rules.put("rule", new RuleRename("rule", rule));
+		rules.put("debug", new RuleRename("debug", debug));
     	rules.put("anyName", new RuleRename("anyName", anyName));
     	rules.put("charClassName", new RuleRename("charClassName", anyName));
     	rules.put("ruleName", new RuleRename("ruleName", anyName));

@@ -1,3 +1,8 @@
+
+CR = '\u000D';
+LF = '\u000A';
+TAB = '\u0009';
+WS = ' '||CR||LF||TAB;
 LETTER = 'a'..'z'||'A'..'Z';
 DIGIT = '0'..'9';
 HEXA = DIGIT||'a'..'f'||'A'..'F';
@@ -9,7 +14,8 @@ integer = +DIGIT+;
 
 main[] = WS* ((+charClass | +rule) WS*)+ ;
 charClass[] = +charClassName WS* '=' WS* +charClassOr WS* ';' ;
-rule[] = +ruleName +asBranch? WS* '=' WS* +ruleOr WS* ';' ;
+rule[] = +debug? +ruleName +asBranch? WS* '=' WS* +ruleOr WS* ';' ;
+debug = '?';
 
 anyName = +LETTER +LETTER||DIGIT||'_'* ;
 charClassName = +anyName;
