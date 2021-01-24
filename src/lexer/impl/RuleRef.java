@@ -9,15 +9,18 @@ public class RuleRef extends Capturable<State> {
 
     final String name;
     final Map<String, Rule> rules;
+    Rule rule;
 
     public RuleRef(boolean capture, String name, Map<String, Rule> rules) {
         super(capture);
         this.name = name;
         this.rules = rules;
+        rule = null;
     }
 
     @Override public State createState(Context ctx) {
-    	Rule rule = rules.get(name);
+    	if (rule == null)
+    		rule = rules.get(name);
     	if (rule == null)
     		throw new RuntimeException("Got a reference to an unknown rule \""+name+"\". TODO : give the closest rule name to help debugging rules.");
     	return rule.createState(ctx);
