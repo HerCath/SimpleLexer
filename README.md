@@ -4,10 +4,13 @@ A simple lexer engine to write simple syntax recognition grammar patterns to mac
 # Main difference with other existing solutions
 It does not really rely on tokens even though its output can be considered a token-stream. Its capabilities are more those you can expect from a regex engine. It can match "DDDC" using a grammar like 'D'* 'DC'. Lots of other lexers need more complex expression to hanlde the fact that the 1st token 'D' is a subset of the 2nd token 'DC'. Some lexer can't even hanlde such cases.
 
+3 major syntax/capability differences:
+* main : this is the entry point rule, like when programming
+* [] : as branch, used so that a rule emits its result as a branch and not a leaf, see below for more details
+* ? for debug : when defining a rule, you may precede its name by a '?' so that when this rule is evaluated, it will dump some debug infos into stdout
+
 # Input/Output
 The `Lexer` input is a `String`. Its output is a tree-like structure.
-
-TODO : make some antlr bridge by wrapping the returned tree into a token stream that can be used by antlr parser
 
 # The API
 For most user, you will just need to use a very small API (4 classes) :
@@ -74,10 +77,12 @@ Inside ruleExpression: char classes, strings and references to another rule may 
 Nothing is implicit, not even whitespaces.
 
 # Exemples
-the grammar `"main[] = +'a' +'A' ;"` matches `"aA"` and capture `<branch name="main"><leaf name="char" value="a"/><leaf name="char" value="A"/></branch>`
+the grammar `"main[] = +'a' +'A' ;"` matches `"aA"` and capture `<main><char>a</char><char>A</char></main>`
 
-the grammar `"main = +'a' +'A' ;"` matches `"aA"` and capture `<leaf name="main" value="aA"/>`
+the grammar `"main = +'a' +'A' ;"` matches `"aA"` and capture `<main>aA</main>`
 
-the grammar `"main = 'a' +'A' ;"` matches `"aA"` and capture `<leaf name="main" value="A"/>`
+the grammar `"main = 'a' +'A' ;"` matches `"aA"` and capture only `<main>A</main>` because `'a'` does not have the `'+'` capture flag in front of it
 
-To run this last exemple, just do `System.out.println(Utils.toLexer("main = 'a' +'A' ;").parse("aA"));`
+the grammar `"?main = 'a' +'A' ;"` does the same as the last exemple but will dump on stdout what it is doing.
+
+To run this last exemple, just do `System.out.println(Utils.toLexer("?main = 'a' +'A' ;").parse("aA"));`
