@@ -86,3 +86,7 @@ the grammar `"main = 'a' +'A' ;"` matches `"aA"` and capture only `<main>A</main
 the grammar `"?main = 'a' +'A' ;"` does the same as the last exemple but will dump on stdout what it is doing.
 
 To run this last exemple, just do `System.out.println(Utils.toLexer("?main = 'a' +'A' ;").parse("aA"));`
+
+# TODO
+add a way to handle left-recursion, better test it
+add a way to auto unnest branches with only one child and a way to control the auto unnest feature un the grammar (some kind of << operator, on either rule declaration and/or in rule uses)
